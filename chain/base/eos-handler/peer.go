@@ -16,9 +16,9 @@ type ErrP2PPeer struct {
 
 // P2PPeer connect to eos p2p node to watch action
 type P2PPeer struct {
-	actionChan chan<- eos.Action
-	errChan    chan<- ErrP2PPeer
-	client     *p2p.Client
+	blockChan chan<- eos.SignedBlock
+	errChan   chan<- ErrP2PPeer
+	client    *p2p.Client
 
 	p2pAddress     string
 	chainID        eos.SHA256Bytes
@@ -28,9 +28,9 @@ type P2PPeer struct {
 // TODO By FanYang change too long params
 
 // NewP2PPeer create connection p2p peer
-func NewP2PPeer(actionChan chan<- eos.Action, errChan chan<- ErrP2PPeer, p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *P2PPeer {
+func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *P2PPeer {
 	return &P2PPeer{
-		actionChan:     actionChan,
+		blockChan:      blockChan,
 		p2pAddress:     p2pAddr,
 		chainID:        chainID,
 		networkVersion: networkVersion,
@@ -74,20 +74,7 @@ func (p *P2PPeer) handler(msg p2p.Message) {
 
 			seelog.Tracef("on block %d %s %v", signedBlockMsg.BlockNumber(), signedBlockMsg.Producer, blockID)
 
-			for _, tr := range signedBlockMsg.Transactions {
-				trx, err := tr.Transaction.Packed.Unpack()
-				if err != nil {
-					seelog.Errorf("transaction unpack err by %s", err.Error())
-					continue
-				}
-
-				seelog.Tracef("trx %x %v %v", tr.Transaction.ID, trx.Fee.String(), trx.String())
-
-				for _, action := range trx.Actions {
-					p.actionChan <- *action
-				}
-			}
-
+			p.blockChan <- *signedBlockMsg
 			return
 		}
 	}

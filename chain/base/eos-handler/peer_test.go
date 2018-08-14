@@ -11,7 +11,7 @@ import (
 func TestPeerConnectToEOS(t *testing.T) {
 	defer seelog.Flush()
 
-	actionChan := make(chan eos.Action, 64)
+	blockChan := make(chan eos.SignedBlock, 64)
 	errChan := make(chan ErrP2PPeer)
 
 	// start a chain http api :8889, p2p address 9001
@@ -26,21 +26,21 @@ func TestPeerConnectToEOS(t *testing.T) {
 		return
 	}
 	seelog.Infof("get info %v %v", info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
-	peer := NewP2PPeer(actionChan, errChan, p2pAddr, info.ChainID, 1)
+	peer := NewP2PPeer(blockChan, errChan, p2pAddr, info.ChainID, 1)
 
 	peer.Connect(info.HeadBlockNum, info.HeadBlockID, info.HeadBlockTime.Time,
 		info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
 
-	actionGetted := 0
+	got := 0
 
 	for {
 		select {
-		case act := <-actionChan:
+		case b := <-blockChan:
 			{
-				t.Logf("get act %v %v", act.Name, act.Account)
-				actionGetted++
-				if actionGetted > 32 {
-					t.Logf("get 32 action ok")
+				t.Logf("get act %v", b.BlockNumber())
+				got++
+				if got > 32 {
+					t.Logf("get 32 block ok")
 					return
 				}
 			}
