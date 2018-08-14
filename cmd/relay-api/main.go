@@ -7,6 +7,10 @@ import (
 	"github.com/eosforce/relay/cmd/logger-cfg"
 	"github.com/eosforce/relay/cmd/relay-api/http"
 	"github.com/gin-gonic/gin"
+
+	_ "github.com/eosforce/relay/cmd/relay-api/account"
+	_ "github.com/eosforce/relay/cmd/relay-api/chain"
+	_ "github.com/eosforce/relay/cmd/relay-api/token"
 )
 
 // relay http api

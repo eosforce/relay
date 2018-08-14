@@ -13,7 +13,6 @@ func InitRouter(isDebug bool) {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	Router = gin.New()
 	// Global middleware
 	// Logger middleware will write the logs to gin.DefaultWriter even if you set with GIN_MODE=release.
 	// By default gin.DefaultWriter = os.Stdout
@@ -23,4 +22,8 @@ func InitRouter(isDebug bool) {
 	Router.Use(gin.Recovery())
 
 	return
+}
+
+func init() {
+	Router = gin.New()
 }
