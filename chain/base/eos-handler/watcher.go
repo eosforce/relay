@@ -16,7 +16,7 @@ type ActionData struct {
 }
 
 // ActionHandlerFunc handler func type
-type ActionHandlerFunc func(action ActionData) error
+type ActionHandlerFunc func(action ActionData)
 
 // EosWatcher watch eos actions by some p2pAdds
 type EosWatcher struct {
@@ -50,7 +50,7 @@ func NewEosWatcher(name, apiURL string, p2pAdds []string) *EosWatcher {
 		errChan:   make(chan ErrP2PPeer),
 		stopChan:  make(chan interface{}),
 
-		handlers: make([]ActionHandlerFunc, 32),
+		handlers: make([]ActionHandlerFunc, 0, 32),
 	}
 }
 
@@ -121,7 +121,35 @@ func (w *EosWatcher) processBlock(block *eos.SignedBlock) error {
 	seelog.Infof("process block %d", blockNum)
 	w.processedBlockNum = blockNum
 
+	// TODO By FanYang just process block util it be IrreversibleBlock
+	blockID, err := block.BlockID()
+	if err != nil {
+		return seelog.Errorf("get block ID err by %s", err.Error())
+	}
+	for _, tr := range block.Transactions {
+		trx, err := tr.Transaction.Packed.Unpack()
+		if err != nil {
+			seelog.Errorf("transaction unpack err by %s", err.Error())
+			continue
+		}
+
+		for _, action := range trx.Actions {
+			w.handler(ActionData{
+				BlockID:  blockID,
+				BlockNum: blockNum,
+				TrxID:    tr.Transaction.ID,
+				Action:   *action,
+			})
+		}
+	}
+
 	return nil
+}
+
+func (w *EosWatcher) handler(act ActionData) {
+	for _, h := range w.handlers {
+		h(act)
+	}
 }
 
 func (w *EosWatcher) closeAll() {
