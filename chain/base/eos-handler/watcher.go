@@ -130,11 +130,9 @@ func (w *EosWatcher) closeAll() {
 
 	// TODO wait all connect closed
 	for addr, peer := range w.peers {
-		go func(addr string, peer *P2PPeer) {
-			seelog.Warnf("stop connect %s", addr)
-			peer.Close()
-			seelog.Warnf("stop connect %s ok", addr)
-			w.waitter.Done()
-		}(addr, peer)
+		seelog.Warnf("stop connect %s", addr)
+		peer.Close()
+		seelog.Warnf("stop connect %s ok", addr)
+		w.waitter.Done()
 	}
 }
