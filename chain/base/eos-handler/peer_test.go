@@ -39,8 +39,8 @@ func TestPeerConnectToEOS(t *testing.T) {
 			{
 				t.Logf("get act %v", b.BlockNumber())
 				got++
-				if got > 32 {
-					t.Logf("get 32 block ok")
+				if got > 5 {
+					t.Logf("get 5 block ok")
 					return
 				}
 			}

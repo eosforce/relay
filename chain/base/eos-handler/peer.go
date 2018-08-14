@@ -56,6 +56,11 @@ func (p *P2PPeer) Connect(headBlock uint32, headBlockID eos.SHA256Bytes, headBlo
 
 }
 
+// Close close connect to peer
+func (p *P2PPeer) Close() {
+	// TODO By FanYang imp close
+}
+
 func (p *P2PPeer) handler(msg p2p.Message) {
 	switch msg.Envelope.Type {
 	case eos.SignedBlockType:
