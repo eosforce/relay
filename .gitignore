@@ -12,3 +12,7 @@
 *.out
 
 \.idea/
+
+cmd/relay-api/relay-api
+
+cmd/relay-api/log/
