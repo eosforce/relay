@@ -1,7 +1,5 @@
 package types
 
-import "github.com/fanyang1988/eos-go"
-
 // ExchangeName exchange pair name
 type ExchangeName string
 
@@ -9,8 +7,8 @@ type ExchangeName string
 type ExchangePair struct {
 	Name   ExchangeName `json:"name"`
 	Type   string       `json:"typ"`
-	TokenA eos.Symbol   `json:"a"`
-	TokenB eos.Symbol   `json:"b"`
+	TokenA Symbol       `json:"a"`
+	TokenB Symbol       `json:"b"`
 }
 
 // ExchangeHistory account exchange history

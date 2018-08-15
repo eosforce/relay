@@ -3,15 +3,18 @@ package account
 import (
 	"net/http"
 
+	"github.com/eosforce/relay/types"
 	"github.com/gin-gonic/gin"
 )
 
 type getAccountInfoReq struct {
 	AccountName string `json:"name" form:"name" binding:"required"`
+	Chain       string `json:"chain" form:"chain" binding:"required"`
 }
 
 type getAccountInfoRsp struct {
 	AccountName string `json:"name"`
+	Chain       string `json:"chain"`
 	// TODO fill other data
 }
 
@@ -26,6 +29,7 @@ func getAccountInfo(c *gin.Context) {
 	// TODO By FanYang imp
 	res := getAccountInfoRsp{
 		AccountName: params.AccountName,
+		Chain:       params.Chain,
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -36,7 +40,7 @@ type queryAccountInfoReq struct {
 }
 
 type queryAccountInfoRsp struct {
-	AccountName []string `json:"account"`
+	AccountName []types.Account `json:"account"`
 	// TODO fill other data
 }
 
@@ -50,12 +54,12 @@ func queryAccountInfo(c *gin.Context) {
 
 	// TODO By FanYang imp
 	res := queryAccountInfoRsp{
-		AccountName: []string{
-			"eosio.acc1",
-			"eosio.acc2",
-			"eosio.acc3",
-			"eosio.acc4",
-			"eosio.acc5",
+		AccountName: []types.Account{
+			{"main", "eosio.acc1"},
+			{"main", "eosio.acc2"},
+			{"main", "eosio.acc3"},
+			{"main", "eosio.acc4"},
+			{"side", "eosio.acc5"},
 		},
 	}
 

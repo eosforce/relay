@@ -3,26 +3,31 @@ package token
 import (
 	"net/http"
 
+	"github.com/eosforce/relay/types"
+	"github.com/fanyang1988/eos-go"
 	"github.com/gin-gonic/gin"
 )
 
-type getMapsReq struct {
-}
-
 type getMapsRsp struct {
-	Maps []string `json:"maps"`
+	Maps []types.Symbol `json:"maps"`
 }
 
 // getAccountInfo get account info by name
 func getMaps(c *gin.Context) {
-	var params getMapsReq
-	if err := c.ShouldBindJSON(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
 	// TODO By FanYang imp
-	res := getMapsRsp{}
+	res := getMapsRsp{
+		Maps: []types.Symbol{
+			{
+				Symbol: eos.Symbol{Precision: 4, Symbol: "EOS"},
+				Chain:  "main",
+			},
+			{
+				Symbol: eos.Symbol{Precision: 4, Symbol: "SYS"},
+				Chain:  "side",
+			},
+		},
+	}
 
 	c.JSON(http.StatusOK, res)
 }

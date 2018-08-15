@@ -3,27 +3,32 @@ package token
 import (
 	"net/http"
 
+	"github.com/eosforce/relay/types"
+	"github.com/fanyang1988/eos-go"
 	"github.com/gin-gonic/gin"
 )
 
-type getExchangesReq struct {
-}
-
 type getExchangesRsp struct {
-	Exchanges []string `json:"exchanges"`
+	Exchanges []types.ExchangePair `json:"exchanges"`
 }
 
 // getAccountInfo get account info by name
 func getExchanges(c *gin.Context) {
-	var params getExchangesReq
-	if err := c.ShouldBindJSON(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
 	// TODO By FanYang imp
 	res := getExchangesRsp{
-		Exchanges: []string{},
+		Exchanges: []types.ExchangePair{
+			{
+				Name: "eos2sys",
+				TokenA: types.Symbol{
+					Symbol: eos.Symbol{Precision: 4, Symbol: "SYS"},
+					Chain:  "main"},
+				TokenB: types.Symbol{
+					Symbol: eos.Symbol{Precision: 4, Symbol: "SYS"},
+					Chain:  "side"},
+				Type: "bancor",
+			},
+		},
 	}
 
 	c.JSON(http.StatusOK, res)
