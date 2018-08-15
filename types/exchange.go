@@ -1,4 +1,4 @@
-package defines
+package types
 
 import "github.com/fanyang1988/eos-go"
 
@@ -13,6 +13,7 @@ type ExchangePair struct {
 	TokenB eos.Symbol   `json:"b"`
 }
 
+// ExchangeHistory account exchange history
 type ExchangeHistory struct {
 	Exchange  ExchangeName `json:"name"`
 	From      Account      `json:"from_account"`

@@ -1,4 +1,4 @@
-package defines
+package types
 
 // ChainName chain name in relay
 type ChainName string

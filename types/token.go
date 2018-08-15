@@ -1,4 +1,4 @@
-package defines
+package types
 
 import (
 	"fmt"
@@ -13,6 +13,7 @@ type Asset struct {
 	Symbol
 }
 
+// Add add two asset if err panic
 func (a Asset) Add(other Asset) Asset {
 	if a.Symbol != other.Symbol {
 		panic("Add applies only to assets with the same symbol")
@@ -20,6 +21,7 @@ func (a Asset) Add(other Asset) Asset {
 	return Asset{Amount: a.Amount + other.Amount, Symbol: a.Symbol}
 }
 
+// Sub sub two asset if err panic
 func (a Asset) Sub(other Asset) Asset {
 	if a.Symbol != other.Symbol {
 		panic("Sub applies only to assets with the same symbol")
@@ -42,6 +44,17 @@ func (a Asset) String() string {
 	}
 
 	return fmt.Sprintf("%s:%s %s", a.Chain, result, a.Symbol.Symbol.Symbol)
+}
+
+// NewAsset create asset
+func NewAsset(chain string, a int64, symbol eos.Symbol) Asset {
+	return Asset{
+		Amount: a,
+		Symbol: Symbol{
+			symbol,
+			ChainName(chain),
+		},
+	}
 }
 
 // Symbol is token's symbol mapped in relay

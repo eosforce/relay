@@ -1,4 +1,4 @@
-package defines
+package types
 
 import "github.com/fanyang1988/eos-go"
 
