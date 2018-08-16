@@ -124,7 +124,7 @@ func (w *EosWatcher) processBlock(block *eos.SignedBlock) error {
 	// TODO By FanYang next version will to process fork from diff peer
 	blockNum := block.BlockNumber()
 	if w.processedBlockNum >= blockNum {
-		seelog.Debugf("no process processed block %d", blockNum)
+		//seelog.Debugf("no process processed block %d", blockNum)
 		return nil
 	}
 

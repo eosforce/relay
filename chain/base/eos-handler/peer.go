@@ -71,13 +71,13 @@ func (p *P2PPeer) handler(msg p2p.Message) {
 				return
 			}
 
-			blockID, err := signedBlockMsg.BlockID()
+			_, err := signedBlockMsg.BlockID()
 			if err != nil {
 				seelog.Errorf("BlockID error by signedBlockMsg %v", err.Error())
 				return
 			}
 
-			seelog.Tracef("on block %d %s %v", signedBlockMsg.BlockNumber(), signedBlockMsg.Producer, blockID)
+			//seelog.Tracef("on block %d %s %v", signedBlockMsg.BlockNumber(), signedBlockMsg.Producer, blockID)
 
 			p.blockChan <- *signedBlockMsg
 			return
