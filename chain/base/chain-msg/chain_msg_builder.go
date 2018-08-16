@@ -32,6 +32,7 @@ func (t *Transfer2MsgBuilder) Build(action *eosHandler.ActionData) (*ChainMsg, e
 
 	res := &ChainMsg{
 		ActionData: *action,
+		Account:    transferAct.From,
 		MsgTyp:     string(transferAct.To),
 		ExtParams:  strings.Split(transferAct.Memo, ":"),
 	}
