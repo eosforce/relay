@@ -20,3 +20,5 @@ cmd/relay-api/log/
 cmd/relay/relay
 
 cmd/relay/log/relay\.log
+
+cmd/relay/log/relay_err\.log

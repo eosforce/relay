@@ -1,3 +1,0 @@
-[2018-08-16 14:39:05] [31m[ERR] [watcher.go(167)] [github.com/eosforce/relay/chain/base/eos-handler.(*EosWatcher).closeAll] Stop Watcher Last BlockNum is 20979[39m
-[0m[2018-08-16 14:39:50] [31m[ERR] [watcher.go(167)] [github.com/eosforce/relay/chain/base/eos-handler.(*EosWatcher).closeAll] Stop Watcher Last BlockNum is 20994[39m
-[0m
