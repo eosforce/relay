@@ -70,9 +70,19 @@ func (w *EosWatcher) Start() error {
 		w.peers[add] = peer
 	}
 
-	for {
-		w.loop()
-	}
+	w.waitter.Add(1)
+	go func() {
+		defer w.waitter.Done()
+		for {
+			isStop, _ := w.loop()
+			if isStop {
+				seelog.Warnf("watcher stop by close")
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 // Stop stop watching then close all
