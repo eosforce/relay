@@ -10,6 +10,7 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain"
 	"github.com/eosforce/relay/cmd/logger-cfg"
+	"github.com/eosforce/relay/db"
 )
 
 var logCfg = flag.String("logCfg", "", "log xml cfg file path")
@@ -37,6 +38,13 @@ func main() {
 		},
 	}
 
+	db.InitDB(db.PostgresCfg{
+		Address:  "127.0.0.1:5432",
+		User:     "pgfy",
+		Password: "123456",
+		Database: "test3",
+	})
+
 	manager := chain.NewManager(mainOpt)
 	err := manager.Start()
 	if err != nil {
@@ -44,7 +52,8 @@ func main() {
 		return
 	}
 
-	time.Sleep(5 * time.Second)
-
-	manager.Stop()
+	defer manager.Stop()
+	for {
+		time.Sleep(5 * time.Second)
+	}
 }
