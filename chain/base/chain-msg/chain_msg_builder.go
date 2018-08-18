@@ -21,7 +21,7 @@ type Transfer2MsgBuilder struct {
 // Build build msg from transfer action, other will gen nil
 func (t *Transfer2MsgBuilder) Build(action *eosHandler.ActionData) (*ChainMsg, error) {
 	if (action.Action.Name != "transfer" || action.Action.Account != "eosio") &&
-		(action.Action.Name != "token.transfer" || action.Action.Account != "eosio") {
+		(action.Action.Name != "transfer" || action.Action.Account != "eosio.token") {
 		return nil, errors.New("no transfer action in main chain")
 	}
 

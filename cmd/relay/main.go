@@ -36,6 +36,23 @@ func main() {
 			"127.0.0.1:9009",
 			"127.0.0.1:9010",
 		},
+		Type: chain.TypeBaseEosforce,
+	}
+
+	sideOpt := chain.WatchOpt{
+		ApiURL: "http://127.0.0.1:18890",
+		P2PAddresses: []string{
+			"127.0.0.1:19002",
+			"127.0.0.1:19003",
+			"127.0.0.1:19004",
+			"127.0.0.1:19005",
+			"127.0.0.1:19006",
+			"127.0.0.1:19007",
+			"127.0.0.1:19008",
+			"127.0.0.1:19009",
+			"127.0.0.1:19010",
+		},
+		Type: chain.TypeBaseEos,
 	}
 
 	db.InitDB(db.PostgresCfg{
@@ -45,7 +62,7 @@ func main() {
 		Database: "test3",
 	})
 
-	manager := chain.NewManager(mainOpt)
+	manager := chain.NewManager(mainOpt, sideOpt)
 	err := manager.Start()
 	if err != nil {
 		seelog.Errorf("start chain mng err By %s", err.Error())

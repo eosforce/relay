@@ -54,6 +54,10 @@ func NewEosWatcher(name, apiURL string, p2pAdds []string) *EosWatcher {
 	}
 }
 
+func (w *EosWatcher) Name() string {
+	return w.name
+}
+
 // Start start watching
 func (w *EosWatcher) Start() error {
 	api := eos.New(w.apiURL)

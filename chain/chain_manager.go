@@ -5,6 +5,7 @@ import (
 	"github.com/eosforce/relay/chain/base/chain-msg"
 	"github.com/eosforce/relay/chain/base/eos-handler"
 	"github.com/eosforce/relay/chain/main-chain"
+	"github.com/eosforce/relay/chain/side-chain/eos"
 )
 
 // Manager manager chain to watcher
@@ -53,10 +54,28 @@ func (m *Manager) Start() error {
 		m.chainMsgHandler.PushMsg(msg)
 	})
 
-	for _, side := range m.watchers {
-		side.RegHandler(func(action eosHandler.ActionData) {
-			// TODO
-		})
+	for name, side := range m.watchers {
+		func(n string, w *eosHandler.EosWatcher) {
+			// TODO support diff chain
+			h := eos.NewHandler(w.Name())
+			h.Reg(m.chainMsgHandler)
+
+			side.RegHandler(func(action eosHandler.ActionData) {
+				// TODO By FanYang use common handler to mainchain
+				if action.Action.Name != "transfer" || action.Action.Account != "eosio.token" {
+					return
+				}
+
+				// TODO use side
+				msg, err := h.Builder().Build(&action)
+				if err != nil {
+					seelog.Errorf("build msg err By %s", err.Error())
+					return
+				}
+				seelog.Tracef("push msg %v %v", msg.MsgTyp, msg)
+				m.chainMsgHandler.PushMsg(msg)
+			})
+		}(name, side)
 	}
 
 	// start chain msg handler
