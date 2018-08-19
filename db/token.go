@@ -135,6 +135,7 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 
 	if len(rs) != 0 {
 		// only use first
+		// TODO By FanYang process Overflow Err
 		newToken.Amount += rs[0].Amount
 		_, err = tx.Model(&newToken).Update()
 	} else {
@@ -153,7 +154,80 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 	return tx.Commit()
 }
 
+// ErrNoEnoughToken no enough token
+var ErrNoEnoughToken = errors.New("ErrNoEnoughToken")
+
 // CostToken cost token from account if no token return a error
-func CostToken(name, chain string, asset types.Asset) error {
-	return nil
+func CostToken(name, chain string, asset types.Asset) (resErr error) {
+	if asset.Amount < 0 {
+		return ErrNoEnoughToken
+	}
+
+	if asset.Amount == 0 {
+		return nil
+	}
+
+	db := Get()
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.WithMessage(err, "add token")
+	}
+
+	// TODO By FanYang use a simple err process func
+	defer func() {
+		if err := recover(); err != nil {
+			e, ok := err.(error)
+			if ok {
+				resErr = e
+			} else {
+				resErr = fmt.Errorf("err by %v", err)
+			}
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				resErr = errors.WithStack(
+					seelog.Errorf("rollback err by %s when err %s",
+						rollbackErr.Error(), resErr.Error()))
+			}
+			return
+		}
+	}()
+
+	newToken := AccountToken{
+		Name:       name,
+		Chain:      chain,
+		TokenChain: string(asset.Chain),
+		Symbol:     asset.GetSymbol(),
+		Amount:     0,
+	}
+
+	var rs []AccountToken
+	err = tx.Model(&rs).
+		Where("name=? and chain=? and token_chain=? and symbol=?",
+			name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
+		Select()
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
+		return errors.WithMessage(err, "add token select err ")
+	}
+
+	if len(rs) == 0 || rs[0].Amount < asset.Amount {
+		return ErrNoEnoughToken
+	}
+
+	newToken.Amount = rs[0].Amount - asset.Amount
+	_, err = tx.Model(&newToken).Update()
+
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
+		return errors.WithMessage(err, "create add token")
+	}
+
+	return tx.Commit()
 }

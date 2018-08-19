@@ -59,4 +59,23 @@ func TestAccountToken(t *testing.T) {
 		t.Log("token ", i, " ", r.String())
 	}
 
+	for i := 0; i < 4; i++ {
+		err := CostToken(accountName, accountChain, types.NewAsset("main", 11112, eos.EOSSymbol))
+		if err != nil {
+			t.Errorf("cost token err by %s", err.Error())
+			t.FailNow()
+			return
+		}
+	}
+
+	res, err = GetAccountTokens(accountName, accountChain)
+	if err != nil {
+		t.Error("get all token err ", err.Error())
+		t.FailNow()
+		return
+	}
+
+	for i, r := range res {
+		t.Log("token ", i, " ", r.String())
+	}
 }
