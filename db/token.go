@@ -88,70 +88,66 @@ func GetAccountToken(db *pg.DB, name, chain, tokenChain, symbol string) (types.A
 // AddToken add token to account
 func AddToken(name, chain string, asset types.Asset) (resErr error) {
 	db := Get()
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.WithMessage(err, "add token")
-	}
 
-	// TODO By FanYang use a simple err process func
-	defer func() {
-		if err := recover(); err != nil {
-			e, ok := err.(error)
-			if ok {
-				resErr = e
+	// use SERIALIZABLE transaction
+	// need retry when readwrite conflict
+	for i := 0; i < MaxRetryTime; i++ {
+		resErr = db.RunInTransaction(func(tx *pg.Tx) error {
+			// to fix Concurrency error,
+			_, err := tx.Exec("set transaction isolation level serializable;")
+			if err != nil {
+				return err
+			}
+
+			newToken := AccountToken{
+				Name:       name,
+				Chain:      chain,
+				TokenChain: string(asset.Chain),
+				Symbol:     asset.GetSymbol(),
+				Amount:     asset.Amount,
+			}
+
+			var rs []AccountToken
+			err = tx.Model(&rs).
+				Where("name=? and chain=? and token_chain=? and symbol=?",
+					name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
+				Select()
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					return errors.WithStack(
+						seelog.Errorf("rollback err by %s when err %s",
+							rollbackErr.Error(), err.Error()))
+				}
+				return errors.WithMessage(err, "add token select err ")
+			}
+			if len(rs) != 0 {
+				// only use first
+				// TODO By FanYang process Overflow Err
+				newToken.Amount += rs[0].Amount
+				_, err = tx.Model(&newToken).Update()
 			} else {
-				resErr = fmt.Errorf("err by %v", err)
+				_, err = tx.Model(&newToken).Create()
 			}
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				resErr = errors.WithStack(
-					seelog.Errorf("rollback err by %s when err %s",
-						rollbackErr.Error(), resErr.Error()))
+
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					return errors.WithStack(
+						seelog.Errorf("rollback err by %s when err %s",
+							rollbackErr.Error(), err.Error()))
+				}
+				return errors.WithMessage(err, "create add token")
 			}
-			return
+
+			return nil
+		})
+		if resErr != nil {
+			seelog.Warn("do add token err by ", resErr.Error())
+		} else {
+			return nil
 		}
-	}()
-
-	newToken := AccountToken{
-		Name:       name,
-		Chain:      chain,
-		TokenChain: string(asset.Chain),
-		Symbol:     asset.GetSymbol(),
-		Amount:     asset.Amount,
 	}
 
-	var rs []AccountToken
-	err = tx.Model(&rs).
-		Where("name=? and chain=? and token_chain=? and symbol=?",
-			name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
-		Select()
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return errors.WithStack(
-				seelog.Errorf("rollback err by %s when err %s",
-					rollbackErr.Error(), err.Error()))
-		}
-		return errors.WithMessage(err, "add token select err ")
-	}
-
-	if len(rs) != 0 {
-		// only use first
-		// TODO By FanYang process Overflow Err
-		newToken.Amount += rs[0].Amount
-		_, err = tx.Model(&newToken).Update()
-	} else {
-		_, err = tx.Model(&newToken).Create()
-	}
-
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return errors.WithStack(
-				seelog.Errorf("rollback err by %s when err %s",
-					rollbackErr.Error(), err.Error()))
-		}
-		return errors.WithMessage(err, "create add token")
-	}
-
-	return tx.Commit()
+	return errors.WithMessage(resErr, "err n times")
 }
 
 // ErrNoEnoughToken no enough token
@@ -168,66 +164,65 @@ func CostToken(name, chain string, asset types.Asset) (resErr error) {
 	}
 
 	db := Get()
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.WithMessage(err, "add token")
-	}
 
-	// TODO By FanYang use a simple err process func
-	defer func() {
-		if err := recover(); err != nil {
-			e, ok := err.(error)
-			if ok {
-				resErr = e
-			} else {
-				resErr = fmt.Errorf("err by %v", err)
+	// use SERIALIZABLE transaction
+	// need retry when readwrite conflict
+	for i := 0; i < MaxRetryTime; i++ {
+		resErr = db.RunInTransaction(func(tx *pg.Tx) error {
+			// to fix Concurrency error,
+			_, err := tx.Exec("set transaction isolation level serializable;")
+			if err != nil {
+				return err
 			}
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				resErr = errors.WithStack(
-					seelog.Errorf("rollback err by %s when err %s",
-						rollbackErr.Error(), resErr.Error()))
+
+			newToken := AccountToken{
+				Name:       name,
+				Chain:      chain,
+				TokenChain: string(asset.Chain),
+				Symbol:     asset.GetSymbol(),
+				Amount:     0,
 			}
-			return
+
+			var rs []AccountToken
+			err = tx.Model(&rs).
+				Where("name=? and chain=? and token_chain=? and symbol=?",
+					name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
+				Select()
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					return errors.WithStack(
+						seelog.Errorf("rollback err by %s when err %s",
+							rollbackErr.Error(), err.Error()))
+				}
+				return errors.WithMessage(err, "add token select err ")
+			}
+
+			if len(rs) == 0 || rs[0].Amount < asset.Amount {
+				return ErrNoEnoughToken
+			}
+
+			newToken.Amount = rs[0].Amount - asset.Amount
+			_, err = tx.Model(&newToken).Update()
+
+			if err != nil {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					return errors.WithStack(
+						seelog.Errorf("rollback err by %s when err %s",
+							rollbackErr.Error(), err.Error()))
+				}
+				return errors.WithMessage(err, "create add token")
+			}
+
+			return nil
+		})
+
+		if resErr != nil {
+			seelog.Warn("do cost token err ", resErr.Error())
+		} else {
+			return nil
 		}
-	}()
 
-	newToken := AccountToken{
-		Name:       name,
-		Chain:      chain,
-		TokenChain: string(asset.Chain),
-		Symbol:     asset.GetSymbol(),
-		Amount:     0,
 	}
 
-	var rs []AccountToken
-	err = tx.Model(&rs).
-		Where("name=? and chain=? and token_chain=? and symbol=?",
-			name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
-		Select()
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return errors.WithStack(
-				seelog.Errorf("rollback err by %s when err %s",
-					rollbackErr.Error(), err.Error()))
-		}
-		return errors.WithMessage(err, "add token select err ")
-	}
-
-	if len(rs) == 0 || rs[0].Amount < asset.Amount {
-		return ErrNoEnoughToken
-	}
-
-	newToken.Amount = rs[0].Amount - asset.Amount
-	_, err = tx.Model(&newToken).Update()
-
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return errors.WithStack(
-				seelog.Errorf("rollback err by %s when err %s",
-					rollbackErr.Error(), err.Error()))
-		}
-		return errors.WithMessage(err, "create add token")
-	}
-
-	return tx.Commit()
+	return errors.WithMessage(resErr, "err n times")
 }

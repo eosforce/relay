@@ -7,3 +7,8 @@ const (
 	// ActivePermission Account active str in db
 	ActivePermission = "active"
 )
+
+const (
+	//MaxRetryTime for tx retry
+	MaxRetryTime = 8
+)
