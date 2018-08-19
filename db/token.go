@@ -93,6 +93,7 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 		return errors.WithMessage(err, "add token")
 	}
 
+	// TODO By FanYang use a simple err process func
 	defer func() {
 		if err := recover(); err != nil {
 			e, ok := err.(error)
@@ -101,7 +102,11 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 			} else {
 				resErr = fmt.Errorf("err by %v", err)
 			}
-			tx.Rollback()
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				resErr = errors.WithStack(
+					seelog.Errorf("rollback err by %s when err %s",
+						rollbackErr.Error(), resErr.Error()))
+			}
 			return
 		}
 	}()
@@ -120,7 +125,11 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 			name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
 		Select()
 	if err != nil {
-		tx.Rollback()
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
 		return errors.WithMessage(err, "add token select err ")
 	}
 
@@ -133,7 +142,11 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 	}
 
 	if err != nil {
-		tx.Rollback()
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
 		return errors.WithMessage(err, "create add token")
 	}
 

@@ -27,6 +27,7 @@ func initTest(t *testing.T) {
 	CreateAccount(accountName, accountChain)
 }
 
+// test add
 func TestAccountToken(t *testing.T) {
 	initTest(t)
 	for i := 0; i < 4; i++ {
