@@ -18,6 +18,10 @@ var (
 	mutex sync.RWMutex
 )
 
+func init() {
+	typs = make(map[chainSymbolKey]types.Symbol, 32)
+}
+
 // Reg reg a symbol
 func Reg(symbol types.Symbol) {
 	mutex.Lock()

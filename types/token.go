@@ -29,6 +29,11 @@ func (a Asset) Sub(other Asset) Asset {
 	return Asset{Amount: a.Amount - other.Amount, Symbol: a.Symbol}
 }
 
+// GetSymbol get Symbol string
+func (a Asset) GetSymbol() string {
+	return a.Symbol.Symbol.Symbol
+}
+
 func (a Asset) String() string {
 	strInt := fmt.Sprintf("%d", a.Amount)
 	if len(strInt) < int(a.Symbol.Precision+1) {

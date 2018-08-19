@@ -36,7 +36,7 @@ func GetAccount(name, chain string) (*Account, error) {
 	return &res[0], nil
 }
 
-// Create Account to db TODO add pubkey
+// CreateAccount Account to db TODO add pubkey
 func CreateAccount(name, chain string) error {
 	return errors.WithMessage(
 		Get().Create(&Account{
