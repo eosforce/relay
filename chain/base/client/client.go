@@ -9,6 +9,9 @@ import (
 // EosClient interface to eos Client or eosforce Client
 type EosClient interface {
 	PushEOSCActions(actions ...*eos.Action) (*eos.PushTransactionFullResp, error)
+
+	// Spec opt for clean
+	Transfer(from, to string, asset eos.Asset) error
 }
 
 // Get get a client to chain by chainName now just a simple imp

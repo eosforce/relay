@@ -8,8 +8,9 @@ import (
 
 // Client client to push trx to eos chain
 type Client struct {
-	api  *eos.API
-	info wallets.WalletInfo
+	api          *eos.API
+	info         wallets.WalletInfo
+	waterfallNum uint32
 }
 
 func NewClient(chainName string) *Client {

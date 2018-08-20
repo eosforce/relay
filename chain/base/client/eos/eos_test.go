@@ -6,23 +6,23 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain/wallets"
 	"github.com/fanyang1988/eos-go"
-	"github.com/fanyang1988/eos-go/eosforce"
+	"github.com/fanyang1988/eos-go/token"
 )
 
 func TestClient(t *testing.T) {
 	defer seelog.Flush()
 
 	wallets.Get().RegWallet(wallets.WalletInfo{
-		APIURL:     "http://127.0.0.1:8888",
-		URL:        "http://127.0.0.1:6666",
+		APIURL:     "http://127.0.0.1:18888",
+		URL:        "http://127.0.0.1:16666",
 		ChainName:  "side",
 		WalletName: "default",
 	})
 
 	client := NewClient("side")
-	res, err := client.PushEOSCActions(eosforce.NewTransfer(
-		eosforce.AN("eosforce"),
-		eosforce.AN("biosbpa"),
+	res, err := client.PushEOSCActions(token.NewTransfer(
+		eos.AN("eosforce"),
+		eos.AN("biosbpa"),
 		eos.NewEOSAsset(121),
 		"testest",
 	))
