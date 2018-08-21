@@ -11,6 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+*.log
+
 \.idea/
 
 cmd/relay-api/relay-api
@@ -22,3 +24,15 @@ cmd/relay/relay
 cmd/relay/log/relay\.log
 
 cmd/relay/log/relay_err\.log
+
+script/eos/nodes/
+
+script/eos/wallet/
+
+script/eosforce/nodes/
+
+script/eosforce/wallet/
+
+script/eos/output.log
+
+script/eosforce/output.log
