@@ -97,7 +97,7 @@ def startNode(nodeIndex, account):
     dir = args.nodes_dir + ('%02d-' % nodeIndex) + account['name'] + '/'
     run('rm -rf ' + dir)
     run('mkdir -p ' + dir)
-    otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address 127.0.0.1:' + str(9000 + i), range(nodeIndex))))
+    otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address 127.0.0.1:' + str(19000 + i), range(nodeIndex))))
     if not nodeIndex: otherOpts += (
         '    --plugin eosio::history_plugin'
         '    --plugin eosio::history_api_plugin'
@@ -111,8 +111,8 @@ def startNode(nodeIndex, account):
         '    --config-dir ' + os.path.abspath(dir) +
         '    --data-dir ' + os.path.abspath(dir) +
         '    --chain-state-db-size-mb 1024'
-        '    --http-server-address 127.0.0.1:' + str(8000 + nodeIndex) +
-        '    --p2p-listen-endpoint 127.0.0.1:' + str(9000 + nodeIndex) +
+        '    --http-server-address 127.0.0.1:' + str(18000 + nodeIndex) +
+        '    --p2p-listen-endpoint 127.0.0.1:' + str(19000 + nodeIndex) +
         '    --max-clients ' + str(maxClients) +
         '    --p2p-max-nodes-per-host ' + str(maxClients) +
         '    --enable-stale-production'
@@ -368,7 +368,7 @@ parser.add_argument('--num-voters', metavar='', help="Number of voters", type=in
 parser.add_argument('--num-senders', metavar='', help="Number of users to transfer funds randomly", type=int, default=10)
 parser.add_argument('--producer-sync-delay', metavar='', help="Time (s) to sleep to allow producers to sync", type=int, default=80)
 parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
-parser.add_argument('-H', '--http-port', type=int, default=8000, metavar='', help='HTTP port for cleos')
+parser.add_argument('-H', '--http-port', type=int, default=18000, metavar='', help='HTTP port for cleos')
 parser.add_argument('-N', '--side-num', type=int, default=0, help="Side Chain num")
 
 for (flag, command, function, inAll, help) in commands:
