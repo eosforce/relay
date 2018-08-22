@@ -22,6 +22,10 @@ now map account is implement by a transfer to "relay.a.map", the token transfer 
 
 For account in main chain, use eosio.transfer to tranfer 0.1 EOSC to "relay.a.map" in main chain.
 
+```
+cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio transfer '{"from":"eosforce","to":"r.acc.map","quantity":"0.1000 EOS","memo":""}' -p eosforce
+```
+
 For account in side chain, use token.transfer to tranfer 0.1 EOS to "relay.a.map" in side chain.
 
 ### 1.2 Token In
@@ -30,9 +34,13 @@ For account in side chain, use token.transfer to tranfer 0.1 EOS to "relay.a.map
 
 In a chain use transfer to trans token to the account define in token map, this will make relay give the account in relay same token map in relay. 
 
+```
+cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio transfer '{"from":"eosforce","to":"r.token.in","quantity":"10000.1000 EOS","memo":""}' -p eosforce
+```
+
 ### 1.3 Token Out
 
-`Token Out` is trans token from relay to its chain, user use transfer in **main chain** to emit it.
+`Token Out` is trans token from relay to its chain, user use transfer in **its chain** to emit it.
 
 transfer like this:
 
@@ -50,9 +58,17 @@ transfer like this:
         "from": "useraccount",
         "to": "r.token.out",
         "quantity": "0.0100 EOS",
-        "memo": "main:100.0000 EOS"
+        "memo": "100.0000 EOS"
       }
     }
+```
+
+```
+cleos --wallet-url http://127.0.0.1:6666 \
+      --url http://127.0.0.1:8001 \
+      push action eosio transfer \
+      '{"from":"eosforce","to":"r.token.out","quantity":"0.1000 EOS","memo":"1000.0000 EOS"}' \
+      -p eosforce
 ```
 
 which means userAccount take out 100.0000 EOS from relay to main chain.
@@ -68,7 +84,7 @@ memo like `main:100.0000 EOS` format is:
 
 ### 1.4 Token Exchange
 
-`Token Exchange` is exchange token to a other token in relay. user use transfer in **main chain** to emit it.
+`Token Exchange` is exchange token to a other token in relay. user use transfer in **its chain** to emit it.
 
 transfer like this:
 

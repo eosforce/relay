@@ -1,10 +1,10 @@
-package eosHandler
+package eosforceHandler
 
 import (
 	"testing"
 
 	"github.com/cihub/seelog"
-	"github.com/eoscanada/eos-go"
+	"github.com/fanyang1988/eos-go"
 )
 
 // TestPeerConnectToEOS test if can connect a local chain

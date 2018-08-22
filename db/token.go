@@ -46,9 +46,8 @@ func GetAccountTokens(name, chain string) ([]types.Asset, error) {
 				seelog.Warnf("get token  err by %s", err)
 		}
 		r = append(r, types.NewAsset(
-			rr.Chain,
 			rr.Amount,
-			typ.Symbol,
+			typ,
 		))
 	}
 
@@ -70,24 +69,24 @@ func GetAccountToken(db *pg.DB, name, chain, tokenChain, symbol string) (types.A
 
 	if err != nil || len(rs) == 0 {
 		return types.NewAsset(
-			tokenChain,
 			0,
-			typ.Symbol,
+			typ,
 		), err
 	}
 
 	r := rs[0]
 
 	return types.NewAsset(
-		r.Chain,
 		r.Amount,
-		typ.Symbol,
+		typ,
 	), nil
 }
 
 // AddToken add token to account
 func AddToken(name, chain string, asset types.Asset) (resErr error) {
 	db := Get()
+
+	seelog.Infof("AddToken %s %s %d %s", name, chain, asset.Amount, asset)
 
 	// use SERIALIZABLE transaction
 	// need retry when readwrite conflict
@@ -110,7 +109,7 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 			var rs []AccountToken
 			err = tx.Model(&rs).
 				Where("name=? and chain=? and token_chain=? and symbol=?",
-					name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
+					name, chain, string(asset.Chain), string(asset.Symbol.Symbol)).
 				Select()
 			if err != nil {
 				if rollbackErr := tx.Rollback(); rollbackErr != nil {
@@ -163,6 +162,8 @@ func CostToken(name, chain string, asset types.Asset) (resErr error) {
 		return nil
 	}
 
+	seelog.Infof("CostToken %s %s %d %s", name, chain, asset.Amount, asset)
+
 	db := Get()
 
 	// use SERIALIZABLE transaction
@@ -186,7 +187,7 @@ func CostToken(name, chain string, asset types.Asset) (resErr error) {
 			var rs []AccountToken
 			err = tx.Model(&rs).
 				Where("name=? and chain=? and token_chain=? and symbol=?",
-					name, chain, string(asset.Chain), string(asset.Symbol.Symbol.Symbol)).
+					name, chain, string(asset.Chain), string(asset.Symbol.Symbol)).
 				Select()
 			if err != nil {
 				if rollbackErr := tx.Rollback(); rollbackErr != nil {

@@ -7,7 +7,10 @@ import (
 )
 
 // HandleFunc msg handle func
-type HandleFunc func(msg *ChainMsg)
+type HandleFunc struct {
+	f         func(msg *ChainMsg)
+	chainName string
+}
 
 // Handler manager handler functions to process msg
 type Handler struct {
@@ -41,7 +44,9 @@ func (c *Handler) Start() {
 				hs, ok := c.handlers[msg.MsgTyp]
 				if ok {
 					for _, h := range hs {
-						h(&msg)
+						if msg.ChainName == h.chainName {
+							h.f(&msg)
+						}
 					}
 				}
 			}
@@ -60,14 +65,18 @@ func (c *Handler) Wait() {
 }
 
 // AddHandler add a handler to a class typ msg, need call before start
-func (c *Handler) AddHandler(typ string, f HandleFunc) {
+func (c *Handler) AddHandler(chainName, typ string, hf func(msg *ChainMsg)) {
 	hs, ok := c.handlers[typ]
+	h := HandleFunc{
+		f:         hf,
+		chainName: chainName,
+	}
 	if ok {
-		hs = append(hs, f)
+		hs = append(hs, h)
 		c.handlers[typ] = hs
 	} else {
 		hs := make([]HandleFunc, 0, 32)
-		hs = append(hs, f)
+		hs = append(hs, h)
 		c.handlers[typ] = hs[:]
 	}
 }

@@ -1,10 +1,10 @@
-package eosHandler
+package eosforceHandler
 
 import (
 	"sync"
 
 	"github.com/cihub/seelog"
-	"github.com/eoscanada/eos-go"
+	"github.com/fanyang1988/eos-go"
 )
 
 // ActionData action data with block and transaction id
@@ -60,15 +60,15 @@ func (w *EosWatcher) Name() string {
 
 // Start start watching
 func (w *EosWatcher) Start() error {
+	api := eos.New(w.apiURL)
+	info, err := api.GetInfo()
+	if err != nil {
+		return seelog.Errorf("get chain %s info err by %s", w.name, w.apiURL)
+	}
+
 	for _, add := range w.p2pAdds {
 		w.waitter.Add(1)
-		api := eos.New(w.apiURL)
-		info, err := api.GetInfo()
-		if err != nil {
-			return seelog.Errorf("get chain %s info err by %s", w.name, w.apiURL)
-		}
-
-		peer := NewP2PPeer(w.blockChan, w.errChan, add, info.ChainID, 1)
+		peer := NewP2PPeer(w.blockChan, w.errChan, add, info.ChainID, 0)
 		peer.Connect(info.HeadBlockNum, info.HeadBlockID, info.HeadBlockTime.Time,
 			info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
 		w.peers[add] = peer

@@ -16,6 +16,6 @@ create table if not exists account_tokens
 	token_chain varchar(16) not null,
 	symbol varchar(16) not null,
 	amount bigint,
-	constraint accounts_pk
+	constraint accounts_tokens_pk
 		primary key (chain, name, token_chain, symbol)
 );

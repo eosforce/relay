@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/eosforce/relay/chain/base/client/eos"
 	"github.com/eosforce/relay/chain/base/client/eosforce"
+	"github.com/eosforce/relay/types"
 	"github.com/fanyang1988/eos-go"
 )
 
@@ -11,7 +12,7 @@ type EosClient interface {
 	PushEOSCActions(actions ...*eos.Action) (*eos.PushTransactionFullResp, error)
 
 	// Spec opt for clean
-	Transfer(from, to string, asset eos.Asset) error
+	Transfer(from, to string, asset types.Asset) error
 }
 
 // Get get a client to chain by chainName now just a simple imp

@@ -1,4 +1,4 @@
-package mainChain
+package eos
 
 import (
 	"github.com/cihub/seelog"

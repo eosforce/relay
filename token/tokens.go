@@ -29,7 +29,7 @@ func Reg(symbol types.Symbol) {
 
 	typs[chainSymbolKey{
 		chain:  string(symbol.Chain),
-		symbol: symbol.Symbol.Symbol,
+		symbol: symbol.Symbol,
 	}] = symbol
 }
 

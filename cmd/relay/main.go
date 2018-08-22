@@ -9,6 +9,7 @@ import (
 
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain"
+	"github.com/eosforce/relay/chain/wallets"
 	"github.com/eosforce/relay/cmd/logger-cfg"
 	"github.com/eosforce/relay/db"
 )
@@ -24,7 +25,7 @@ func main() {
 
 	// for debug
 	mainOpt := chain.WatchOpt{
-		ApiURL: "http://127.0.0.1:8890",
+		ApiURL: "http://127.0.0.1:8001",
 		P2PAddresses: []string{
 			"127.0.0.1:9002",
 			"127.0.0.1:9003",
@@ -37,10 +38,17 @@ func main() {
 			"127.0.0.1:9010",
 		},
 		Type: chain.TypeBaseEosforce,
+		Name: "main",
 	}
+	wallets.Get().RegWallet(wallets.WalletInfo{
+		APIURL:     "http://127.0.0.1:8001",
+		URL:        "http://127.0.0.1:6666",
+		ChainName:  "main",
+		WalletName: "default",
+	})
 
 	sideOpt := chain.WatchOpt{
-		ApiURL: "http://127.0.0.1:18890",
+		ApiURL: "http://127.0.0.1:18001",
 		P2PAddresses: []string{
 			"127.0.0.1:19002",
 			"127.0.0.1:19003",
@@ -53,7 +61,14 @@ func main() {
 			"127.0.0.1:19010",
 		},
 		Type: chain.TypeBaseEos,
+		Name: "side",
 	}
+	wallets.Get().RegWallet(wallets.WalletInfo{
+		APIURL:     "http://127.0.0.1:18001",
+		URL:        "http://127.0.0.1:16666",
+		ChainName:  "side",
+		WalletName: "default",
+	})
 
 	db.InitDB(db.PostgresCfg{
 		Address:  "127.0.0.1:5432",

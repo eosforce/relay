@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fanyang1988/eos-go"
+	eos "github.com/eoscanada/eos-go"
+	eosforce "github.com/fanyang1988/eos-go"
 )
 
 // Asset is token map in relay
@@ -31,7 +32,7 @@ func (a Asset) Sub(other Asset) Asset {
 
 // GetSymbol get Symbol string
 func (a Asset) GetSymbol() string {
-	return a.Symbol.Symbol.Symbol
+	return a.Symbol.Symbol
 }
 
 func (a Asset) String() string {
@@ -48,26 +49,42 @@ func (a Asset) String() string {
 		result = strInt[:len(strInt)-int(a.Symbol.Precision)] + "." + strInt[len(strInt)-int(a.Symbol.Precision):]
 	}
 
-	return fmt.Sprintf("%s:%s %s", a.Chain, result, a.Symbol.Symbol.Symbol)
+	return fmt.Sprintf("%s:%s %s", a.Chain, result, a.Symbol.Symbol)
 }
 
 // NewAsset create asset
-func NewAsset(chain string, a int64, symbol eos.Symbol) Asset {
+func NewAsset(a int64, symbol Symbol) Asset {
 	return Asset{
 		Amount: a,
-		Symbol: Symbol{
-			symbol,
-			ChainName(chain),
-		},
+		Symbol: symbol,
 	}
 }
 
 // Symbol is token's symbol mapped in relay
 type Symbol struct {
-	eos.Symbol
-	Chain ChainName `json:"chain"`
+	Precision uint8
+	Symbol    string
+	Chain     ChainName `json:"chain"`
+}
+
+// FromEosSymbol gain symbol from eos
+func FromEosSymbol(chainName string, symbol eos.Symbol) Symbol {
+	return Symbol{
+		Precision: symbol.Precision,
+		Symbol:    symbol.Symbol,
+		Chain:     ChainName(chainName),
+	}
+}
+
+// FromEosforceSymbol gain symbol from eosforce
+func FromEosforceSymbol(chainName string, symbol eosforce.Symbol) Symbol {
+	return Symbol{
+		Precision: symbol.Precision,
+		Symbol:    symbol.Symbol,
+		Chain:     ChainName(chainName),
+	}
 }
 
 func (s Symbol) String() string {
-	return fmt.Sprintf("%s:%s", s.Chain, s.Symbol.Symbol)
+	return fmt.Sprintf("%s:%s", s.Chain, s.Symbol)
 }

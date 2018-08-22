@@ -12,13 +12,13 @@ func TestHandler(t *testing.T) {
 	defer seelog.Flush()
 
 	hh := NewChainMsgHandler()
-	hh.AddHandler("biosbpa", func(msg *ChainMsg) {
+	hh.AddHandler("main", "biosbpa", func(msg *ChainMsg) {
 		seelog.Infof("on msg a1 %v", *msg)
 	})
-	hh.AddHandler("biosbpa", func(msg *ChainMsg) {
+	hh.AddHandler("main", "biosbpa", func(msg *ChainMsg) {
 		seelog.Infof("on msg a2 %v", *msg)
 	})
-	hh.AddHandler("biosbpb", func(msg *ChainMsg) {
+	hh.AddHandler("main", "biosbpb", func(msg *ChainMsg) {
 		seelog.Infof("on msg b %v", *msg)
 	})
 

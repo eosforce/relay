@@ -4,6 +4,7 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain/base/chain-msg"
 	"github.com/eosforce/relay/chain/base/eos-handler"
+	"github.com/eosforce/relay/chain/base/eosforce-handler"
 	"github.com/eosforce/relay/chain/main-chain"
 	"github.com/eosforce/relay/chain/side-chain/eos"
 )
@@ -13,7 +14,7 @@ type Manager struct {
 	chainMsgHandler *chainMsg.Handler
 
 	mainHandler Handler
-	mainWatcher *eosHandler.EosWatcher
+	mainWatcher *eosforceHandler.EosWatcher
 
 	watchers map[string]*eosHandler.EosWatcher
 	// sideHandlers
@@ -25,7 +26,7 @@ func NewManager(mainOpt WatchOpt, sideOpt ...WatchOpt) *Manager {
 		chainMsgHandler: chainMsg.NewChainMsgHandler(),
 
 		mainHandler: mainChain.NewHandler(),
-		mainWatcher: eosHandler.NewEosWatcher(mainOpt.Name, mainOpt.ApiURL, mainOpt.P2PAddresses),
+		mainWatcher: eosforceHandler.NewEosWatcher(mainOpt.Name, mainOpt.ApiURL, mainOpt.P2PAddresses),
 
 		watchers: make(map[string]*eosHandler.EosWatcher),
 	}
@@ -41,11 +42,11 @@ func NewManager(mainOpt WatchOpt, sideOpt ...WatchOpt) *Manager {
 func (m *Manager) Start() error {
 	// Reg
 	m.mainHandler.Reg(m.chainMsgHandler)
-	m.mainWatcher.RegHandler(func(action eosHandler.ActionData) {
+	m.mainWatcher.RegHandler(func(action eosforceHandler.ActionData) {
 		if action.Action.Name != "transfer" || action.Action.Account != "eosio" {
 			return
 		}
-		msg, err := m.mainHandler.Builder().Build(&action)
+		msg, err := m.mainHandler.Builder().BuildFromEOSForce(&action)
 		if err != nil {
 			seelog.Errorf("build msg err By %s", err.Error())
 			return
@@ -67,7 +68,7 @@ func (m *Manager) Start() error {
 				}
 
 				// TODO use side
-				msg, err := h.Builder().Build(&action)
+				msg, err := h.Builder().BuildFromEOS(&action)
 				if err != nil {
 					seelog.Errorf("build msg err By %s", err.Error())
 					return

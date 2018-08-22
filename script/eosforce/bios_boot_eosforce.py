@@ -13,6 +13,15 @@ logFile = None
 
 unlockTimeout = 999999999
 
+relayPriKey = '5JbykKocbS8Hj3s4xokv5Ej3iXqrSqdwxBcHQFXf5DwUmGELxTi'
+relayPubKey = 'EOS5NiqXiggrB5vyfedTFseDi6mW4U74bBhR7S2KSq181jHdYMNVY'
+
+relayAccounts = [
+    'r.token.in',
+    'r.token.out',
+    'r.acc.map',
+]
+
 def jsonArg(a):
     return " '" + json.dumps(a) + "' "
 
@@ -67,6 +76,12 @@ def makeGenesis():
 def addB1Account():
     run(args.cleos + 'create account eosforce b1 ' + initAccounts[len(initAccounts) - 1]['key'])
 
+def addRelayAccount():
+    for a in relayAccounts:
+        run(args.cleos + 'create account eosforce ' + a + ' ' + relayPubKey)
+        run(args.cleos + 'push action eosio transfer \'{"from":"eosforce","to":"%s","quantity":"10000.0000 EOS","memo":""}\' -p eosforce' % a)
+
+
 def startWallet():
     run('rm -rf ' + os.path.abspath(args.wallet_dir))
     run('mkdir -p ' + os.path.abspath(args.wallet_dir))
@@ -76,6 +91,7 @@ def startWallet():
 
 def importKeys():
     keys = {}
+    run(args.cleos + 'wallet import --key ' + relayPriKey)
     for a in initAccountsKeys:
         key = a[1]
         if not key in keys:
@@ -137,6 +153,7 @@ def stepStartProducers():
     startProducers(initProducers, initProducerSigKeys)
     sleep(3)
     addB1Account()
+    addRelayAccount()
     sleep(args.producer_sync_delay)
 
 def stepLog():
@@ -144,12 +161,14 @@ def stepLog():
     listProducers()
 
 
+
+
 # =======================================================================================================================
 # Command Line Arguments
 parser = argparse.ArgumentParser()
 
 commands = [
-    ('k', 'kill',           stepKillAll,                True,    "Kill all nodeos and keosd processes"),
+    # ('k', 'kill',           stepKillAll,                True,    "Kill all nodeos and keosd processes"),
     ('w', 'wallet',         stepStartWallet,            True,    "Start keosd, create wallet, fill with keys"),
     ('P', 'start-prod',     stepStartProducers,         True,    "Start producers"),
     ('l', 'log',            stepLog,                    True,    "Show tail of node's log"),

@@ -13,7 +13,6 @@ import time
 args = None
 logFile = None
 
-unlockTimeout = 999999999
 fastUnstakeSystem = './fast.refund/eosio.system/eosio.system.wasm'
 
 systemAccounts = [
@@ -26,6 +25,15 @@ systemAccounts = [
     'eosio.stake',
     'eosio.token',
     'eosio.vpay',
+]
+
+relayPriKey = '5JbykKocbS8Hj3s4xokv5Ej3iXqrSqdwxBcHQFXf5DwUmGELxTi'
+relayPubKey = 'EOS5NiqXiggrB5vyfedTFseDi6mW4U74bBhR7S2KSq181jHdYMNVY'
+
+relayAccounts = [
+    'r.token.in',
+    'r.token.out',
+    'r.acc.map',
 ]
 
 def jsonArg(a):
@@ -72,12 +80,14 @@ def sleep(t):
 def startWallet():
     run('rm -rf ' + os.path.abspath(args.wallet_dir))
     run('mkdir -p ' + os.path.abspath(args.wallet_dir))
-    background(args.keosd + ' --unlock-timeout %d --http-server-address 127.0.0.1:16666 --wallet-dir %s' % (unlockTimeout, os.path.abspath(args.wallet_dir)))
+    background(args.keosd + ' --http-server-address 127.0.0.1:16666 --wallet-dir %s' % (os.path.abspath(args.wallet_dir)))
     sleep(.4)
     run(args.cleos + 'wallet create -f ./wallet/passwd')
 
 def importKeys():
     run(args.cleos + 'wallet import --private-key ' + args.private_key)
+    # for relay
+    run(args.cleos + 'wallet import --private-key ' + relayPriKey)
     keys = {}
     for a in accounts:
         key = a['pvt']
@@ -175,6 +185,12 @@ def createStakedAccounts(b, e):
             (a['name'], a['pub'], intToCurrency(stakeNet), intToCurrency(stakeCpu), intToCurrency(ramFunds)))
         if unstaked:
             retry(args.cleos + 'transfer eosio %s "%s"' % (a['name'], intToCurrency(unstaked)))
+
+def createRelayAccount(accounts):
+    for a in accounts:
+        retry(args.cleos + 'system newaccount --transfer eosio %s %s --stake-net "%s" --stake-cpu "%s" --buy-ram "%s"   ' %
+              (a, relayPubKey, intToCurrency(20000000), intToCurrency(20000000), intToCurrency(100000000)))
+        retry(args.cleos + 'transfer eosio %s "%s"' % (a, intToCurrency(100000000)))
 
 def regProducers(b, e):
     for i in range(b, e):
@@ -289,14 +305,16 @@ def stepInstallSystemContracts():
 def stepCreateTokens():
     run(args.cleos + 'push action eosio.token create \'["eosio", "10000000000.0000 %s"]\' -p eosio.token' % (args.symbol))
     totalAllocation = allocateFunds(0, len(accounts))
-    run(args.cleos + 'push action eosio.token issue \'["eosio", "%s", "memo"]\' -p eosio' % intToCurrency(totalAllocation))
+    run(args.cleos + 'push action eosio.token issue \'["eosio", "%s", "memo"]\' -p eosio' % intToCurrency(totalAllocation + 10000000000))
     sleep(1)
 def stepSetSystemContract():
     retry(args.cleos + 'set contract eosio ' + args.contracts_dir + 'eosio.system/')
     sleep(1)
     run(args.cleos + 'push action eosio setpriv' + jsonArg(['eosio.msig', 1]) + '-p eosio@active')
 def stepCreateStakedAccounts():
+    createRelayAccount(relayAccounts)
     createStakedAccounts(0, len(accounts))
+
 def stepRegProducers():
     regProducers(firstProducer, firstProducer + numProducers)
     sleep(1)
@@ -326,7 +344,7 @@ def stepLog():
 parser = argparse.ArgumentParser()
 
 commands = [
-    ('k', 'kill',           stepKillAll,                True,    "Kill all nodeos and keosd processes"),
+    # ('k', 'kill',           stepKillAll,                True,    "Kill all nodeos and keosd processes"),
     ('w', 'wallet',         stepStartWallet,            True,    "Start keosd, create wallet, fill with keys"),
     ('b', 'boot',           stepStartBoot,              True,    "Start boot node"),
     ('s', 'sys',            createSystemAccounts,       True,    "Create system accounts (eosio.*)"),
@@ -387,6 +405,10 @@ dataRoot = 'side%d/' % args.side_num
 args.nodes_dir = args.nodes_dir + dataRoot
 args.wallet_dir = args.wallet_dir + dataRoot
 args.log_path = './' + dataRoot + args.log_path
+
+if subprocess.call('mkdir -p ./' + dataRoot, shell=True):
+        print('bios-boot-tutorial.py: exiting because of error')
+        sys.exit(1)
 
 args.cleos += '--url http://127.0.0.1:%d ' % args.http_port
 

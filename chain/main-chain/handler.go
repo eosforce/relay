@@ -3,9 +3,9 @@ package mainChain
 import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain/base/chain-msg"
+	"github.com/eosforce/relay/const"
 	"github.com/eosforce/relay/types"
 	"github.com/fanyang1988/eos-go"
-	"github.com/fanyang1988/eos-go/eosforce"
 )
 
 // Handler process ChainMsg From main chain
@@ -18,15 +18,17 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Name() string {
-	return "chain.main"
+	return "main"
 }
 
 func (h *Handler) Builder() chainMsg.Builder {
-	return &chainMsg.Transfer2MsgBuilder{}
+	return &chainMsg.Transfer2MsgBuilder{
+		ChainName: h.Name(),
+	}
 }
 
 func (h *Handler) Reg(msgHandler *chainMsg.Handler) {
-	msgHandler.AddHandler("r.acc.map", func(msg *chainMsg.ChainMsg) {
+	msgHandler.AddHandler(h.Name(), consts.AccountMapAcc, func(msg *chainMsg.ChainMsg) {
 		name := msg.Account
 		err := h.onMapAccount(name)
 		if err != nil {
@@ -35,14 +37,9 @@ func (h *Handler) Reg(msgHandler *chainMsg.Handler) {
 		}
 	})
 
-	msgHandler.AddHandler("r.token.in", func(msg *chainMsg.ChainMsg) {
+	msgHandler.AddHandler(h.Name(), consts.TokenInAcc, func(msg *chainMsg.ChainMsg) {
 		name := msg.Account
-		transferAct, ok := msg.ActionData.Action.ActionData.Data.(*eosforce.Transfer)
-		if !ok {
-			seelog.Errorf("token in data error")
-			return
-		}
-		asset := transferAct.Quantity
+		asset := msg.PA
 
 		// TODO Relay Fee
 
@@ -53,27 +50,26 @@ func (h *Handler) Reg(msgHandler *chainMsg.Handler) {
 		}
 	})
 
-	msgHandler.AddHandler("r.token.out", func(msg *chainMsg.ChainMsg) {
+	msgHandler.AddHandler(h.Name(), consts.TokenOutAcc, func(msg *chainMsg.ChainMsg) {
 		name := msg.Account
 
-		if len(msg.ExtParams) < 2 {
+		if len(msg.ExtParams) < 1 {
 			seelog.Errorf("token out no params")
 			return
 		}
 
-		outChainName := msg.ExtParams[0]
-		asset, err := eos.NewAsset(msg.ExtParams[1])
+		asset, err := eos.NewAsset(msg.ExtParams[0])
 
 		if err != nil {
 			seelog.Errorf("token out err by asset %s %s",
-				err.Error(), msg.ExtParams[1])
+				err.Error(), msg.ExtParams[0])
 			return
 		}
 
-		err = h.onTokenOut(name, types.NewAsset(outChainName, asset.Amount, asset.Symbol))
+		err = h.onTokenOut(name, types.NewAsset(asset.Amount, types.FromEosforceSymbol(msg.ChainName, asset.Symbol)))
 		if err != nil {
 			seelog.Errorf("do token out cmd err %s %s %s by %s",
-				string(name), outChainName, asset.String(), err.Error())
+				string(name), h.Name(), asset.String(), err.Error())
 		}
 	})
 }
