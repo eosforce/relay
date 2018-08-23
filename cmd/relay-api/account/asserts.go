@@ -3,8 +3,8 @@ package account
 import (
 	"net/http"
 
+	"github.com/eosforce/relay/db"
 	"github.com/eosforce/relay/types"
-	"github.com/fanyang1988/eos-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,16 +27,16 @@ func getAccountAssets(c *gin.Context) {
 		return
 	}
 
-	// TODO By FanYang imp
+	resData, err := db.GetAccountTokens(params.AccountName, params.Chain)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	res := getAccountAssetsRsp{
 		AccountName: params.AccountName,
 		Chain:       params.Chain,
-		Assets: []types.Asset{
-			types.NewAsset("main", 11111, eos.Symbol{Precision: 4, Symbol: "EOS"}),
-			types.NewAsset("main", 22222, eos.Symbol{Precision: 4, Symbol: "EEE"}),
-			types.NewAsset("main", 33333, eos.Symbol{Precision: 4, Symbol: "AAA"}),
-			types.NewAsset("side", 44444, eos.Symbol{Precision: 4, Symbol: "SYS"}),
-		},
+		Assets:      resData,
 	}
 
 	c.JSON(http.StatusOK, res)

@@ -3,8 +3,9 @@ package token
 import (
 	"net/http"
 
+	"github.com/eoscanada/eos-go"
 	"github.com/eosforce/relay/types"
-	"github.com/fanyang1988/eos-go"
+	eosforce "github.com/fanyang1988/eos-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,14 +20,10 @@ func getExchanges(c *gin.Context) {
 	res := getExchangesRsp{
 		Exchanges: []types.ExchangePair{
 			{
-				Name: "eos2sys",
-				TokenA: types.Symbol{
-					Symbol: eos.Symbol{Precision: 4, Symbol: "SYS"},
-					Chain:  "main"},
-				TokenB: types.Symbol{
-					Symbol: eos.Symbol{Precision: 4, Symbol: "SYS"},
-					Chain:  "side"},
-				Type: "bancor",
+				Name:   "eos2sys",
+				TokenA: types.FromEosforceSymbol("main", eosforce.EOSSymbol),
+				TokenB: types.FromEosSymbol("side", eos.EOSSymbol),
+				Type:   "bancor",
 			},
 		},
 	}

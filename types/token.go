@@ -60,6 +60,22 @@ func NewAsset(a int64, symbol Symbol) Asset {
 	}
 }
 
+// NewAssetFromEos create asset from eos
+func NewAssetFromEos(chain string, a int64, symbol eos.Symbol) Asset {
+	return Asset{
+		Amount: a,
+		Symbol: FromEosSymbol(chain, symbol),
+	}
+}
+
+// NewAssetFromEosforce create asset from eos
+func NewAssetFromEosforce(chain string, a int64, symbol eosforce.Symbol) Asset {
+	return Asset{
+		Amount: a,
+		Symbol: FromEosforceSymbol(chain, symbol),
+	}
+}
+
 // Symbol is token's symbol mapped in relay
 type Symbol struct {
 	Precision uint8

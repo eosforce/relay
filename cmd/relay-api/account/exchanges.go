@@ -42,8 +42,8 @@ func getAccountExchanges(c *gin.Context) {
 					Chain: "main",
 					Name:  "others",
 				},
-				FromToken: types.NewAsset("main", 11111, eos.Symbol{Precision: 4, Symbol: "EOS"}),
-				ToToken:   types.NewAsset("main", 22222, eos.Symbol{Precision: 4, Symbol: "SYS"}),
+				FromToken: types.NewAssetFromEosforce("main", 11111, eos.Symbol{Precision: 4, Symbol: "EOS"}),
+				ToToken:   types.NewAssetFromEosforce("main", 22222, eos.Symbol{Precision: 4, Symbol: "SYS"}),
 			},
 			{
 				Exchange: "test",
@@ -55,8 +55,8 @@ func getAccountExchanges(c *gin.Context) {
 					Chain: "main",
 					Name:  "others",
 				},
-				FromToken: types.NewAsset("main", 11111, eos.Symbol{Precision: 4, Symbol: "EOS"}),
-				ToToken:   types.NewAsset("main", 22222, eos.Symbol{Precision: 4, Symbol: "SYS"}),
+				FromToken: types.NewAssetFromEosforce("main", 11111, eos.Symbol{Precision: 4, Symbol: "EOS"}),
+				ToToken:   types.NewAssetFromEosforce("main", 22222, eos.Symbol{Precision: 4, Symbol: "SYS"}),
 			},
 		},
 	}
