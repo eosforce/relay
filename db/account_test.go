@@ -1,15 +1,44 @@
 package db
 
-import "testing"
+import (
+	"testing"
 
-func TestCreateAccount(t *testing.T) {
+	"github.com/eosforce/relay/token"
+	"github.com/eosforce/relay/types"
+)
+
+func initDBs() {
 	InitDB(PostgresCfg{
 		Address:  "127.0.0.1:5432",
 		User:     "pgfy",
 		Password: "123456",
 		Database: "test3",
 	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "main",
+		Symbol:    "EOS",
+	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "side",
+		Symbol:    "EOS",
+	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "side",
+		Symbol:    "SYS",
+	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "main",
+		Symbol:    "TST",
+	})
 
+}
+
+func TestCreateAccount(t *testing.T) {
+	initDBs()
 	err := CreateAccount("fanyang", "main")
 	if err != nil {
 		t.Errorf("err by create %s", err.Error())
@@ -23,12 +52,7 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func TestCreateAccountPermissions(t *testing.T) {
-	InitDB(PostgresCfg{
-		Address:  "127.0.0.1:5432",
-		User:     "pgfy",
-		Password: "123456",
-		Database: "test3",
-	})
+	initDBs()
 
 	pers, err := GetAccountPermission("fy", "main")
 	if err != nil {

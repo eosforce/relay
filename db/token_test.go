@@ -3,7 +3,6 @@ package db
 import (
 	"testing"
 
-	"github.com/eosforce/relay/token"
 	"github.com/eosforce/relay/types"
 	"github.com/fanyang1988/eos-go"
 )
@@ -13,23 +12,10 @@ const (
 	accountChain = "main"
 )
 
-func initTest(t *testing.T) {
-	InitDB(PostgresCfg{
-		Address:  "127.0.0.1:5432",
-		User:     "pgfy",
-		Password: "123456",
-		Database: "test3",
-	})
-
-	token.Reg(types.NewAssetFromEosforce("main", 0, eos.EOSSymbol).Symbol)
-	token.Reg(types.NewAssetFromEosforce("side", 0, eos.EOSSymbol).Symbol)
-
-	CreateAccount(accountName, accountChain)
-}
-
 // test add
 func TestAccountToken(t *testing.T) {
-	initTest(t)
+	initDBs()
+
 	for i := 0; i < 4; i++ {
 		err := AddToken(accountName, accountChain, types.NewAssetFromEosforce("main", 1111111, eos.EOSSymbol))
 		if err != nil {
@@ -60,7 +46,7 @@ func TestAccountToken(t *testing.T) {
 	}
 
 	for i := 0; i < 4; i++ {
-		err := CostToken(accountName, accountChain, types.NewAssetFromEosforce("main", 11112, eos.EOSSymbol))
+		err = CostToken(accountName, accountChain, types.NewAssetFromEosforce("main", 11112, eos.EOSSymbol))
 		if err != nil {
 			t.Errorf("cost token err by %s", err.Error())
 			t.FailNow()

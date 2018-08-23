@@ -12,3 +12,11 @@ const (
 	//MaxRetryTime for tx retry
 	MaxRetryTime = 8
 )
+
+const (
+	// ChainTypEos chain imp by eosio
+	ChainTypEos = "eos"
+
+	// ChainTypEosforce chain imp by eosforce version
+	ChainTypEosforce = "eosforce"
+)
