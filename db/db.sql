@@ -19,3 +19,19 @@ create table if not exists account_tokens
 	constraint accounts_tokens_pk
 		primary key (chain, name, token_chain, symbol)
 );
+
+create table account_permissions
+(
+  name       varchar(32) not null,
+  chain      varchar(16) not null,
+  permission varchar(16) not null,
+  pubkey     varchar(64) not null,
+  constraint account_keys_pk
+  primary key (name, chain)
+);
+
+alter table account_permissions
+  owner to pgfy;
+
+create index account_permissions_permission_pubkey_index
+  on account_permissions (permission, pubkey);

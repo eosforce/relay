@@ -3,13 +3,16 @@ package db
 import (
 	"fmt"
 
+	"time"
+
 	"github.com/pkg/errors"
 )
 
 // Account account in db
 type Account struct {
-	Name  string `json:"name"`
-	Chain string `json:"chain"`
+	Name       string    `json:"name"`
+	Chain      string    `json:"chain"`
+	CreateTime time.Time `json:"create_time"`
 }
 
 func (u *Account) String() string {
@@ -66,6 +69,26 @@ func GetAccountPermission(name, chain string) ([]AccountPermission, error) {
 	var res []AccountPermission
 	err := db.Model(&res).
 		Where("name=? and chain = ?", name, chain).
+		Select()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) == 0 {
+		return nil, nil
+	}
+
+	return res[:], nil
+}
+
+// QueryAccountByPermission query account by permission
+func QueryAccountByPermission(permission, pubkey string) ([]AccountPermission, error) {
+	db := Get()
+
+	var res []AccountPermission
+	err := db.Model(&res).
+		Where("permission=? and pubkey=?", permission, pubkey).
 		Select()
 
 	if err != nil {
