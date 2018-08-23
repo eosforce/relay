@@ -1,9 +1,13 @@
 package types
 
-import "github.com/fanyang1988/eos-go"
-
 // Account is account in relay, it map from the chains
 type Account struct {
-	Chain ChainName       `json:"chain"`
-	Name  eos.AccountName `json:"name"`
+	Chain string `json:"chain"`
+	Name  string `json:"name"`
+}
+
+// Permission permission in a account , like owner or active
+type Permission struct {
+	Permission string `json:"permission"`
+	PublicKey  string `json:"pubkey"`
 }

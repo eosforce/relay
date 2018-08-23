@@ -5,6 +5,7 @@ import (
 
 	"time"
 
+	"github.com/eosforce/relay/types"
 	"github.com/pkg/errors"
 )
 
@@ -63,7 +64,7 @@ func (u *AccountPermission) String() string {
 }
 
 // GetAccountPermission get account permissions from db
-func GetAccountPermission(name, chain string) ([]AccountPermission, error) {
+func GetAccountPermission(name, chain string) ([]types.Permission, error) {
 	db := Get()
 
 	var res []AccountPermission
@@ -79,7 +80,15 @@ func GetAccountPermission(name, chain string) ([]AccountPermission, error) {
 		return nil, nil
 	}
 
-	return res[:], nil
+	resData := make([]types.Permission, 0, len(res))
+	for _, k := range res {
+		resData = append(resData, types.Permission{
+			Permission: k.Permission,
+			PublicKey:  k.Pubkey,
+		})
+	}
+
+	return resData[:], nil
 }
 
 // QueryAccountByPermission query account by permission

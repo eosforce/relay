@@ -35,8 +35,8 @@ func getAccountExchanges(c *gin.Context) {
 			{
 				Exchange: "test",
 				From: types.Account{
-					Chain: types.ChainName(params.Chain),
-					Name:  eos.AccountName(params.AccountName),
+					Chain: params.Chain,
+					Name:  params.AccountName,
 				},
 				To: types.Account{
 					Chain: "main",
@@ -48,8 +48,8 @@ func getAccountExchanges(c *gin.Context) {
 			{
 				Exchange: "test",
 				From: types.Account{
-					Chain: types.ChainName(params.Chain),
-					Name:  eos.AccountName(params.AccountName),
+					Chain: params.Chain,
+					Name:  params.AccountName,
 				},
 				To: types.Account{
 					Chain: "main",

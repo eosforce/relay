@@ -3,6 +3,9 @@ package account
 import (
 	"net/http"
 
+	"time"
+
+	"github.com/eosforce/relay/db"
 	"github.com/eosforce/relay/types"
 	"github.com/gin-gonic/gin"
 )
@@ -13,9 +16,11 @@ type getAccountInfoReq struct {
 }
 
 type getAccountInfoRsp struct {
-	AccountName string `json:"name"`
-	Chain       string `json:"chain"`
-	// TODO fill other data
+	AccountName string             `json:"name"`
+	Chain       string             `json:"chain"`
+	CreateTime  time.Time          `json:"create_time"`
+	Permissions []types.Permission `json:"permissions"`
+	// TBD fill other data
 }
 
 // getAccountInfo get account info by name
@@ -26,10 +31,28 @@ func getAccountInfo(c *gin.Context) {
 		return
 	}
 
-	// TODO By FanYang imp
+	data, err := db.GetAccount(params.AccountName, params.Chain)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if data == nil {
+		c.JSON(http.StatusOK, getAccountInfoRsp{})
+		return
+	}
+
+	permissions, err := db.GetAccountPermission(params.AccountName, params.Chain)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	res := getAccountInfoRsp{
 		AccountName: params.AccountName,
 		Chain:       params.Chain,
+		CreateTime:  data.CreateTime,
+		Permissions: permissions,
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -41,7 +64,6 @@ type queryAccountInfoReq struct {
 
 type queryAccountInfoRsp struct {
 	AccountName []types.Account `json:"account"`
-	// TODO fill other data
 }
 
 // getAccountInfo get account info by name
@@ -52,15 +74,22 @@ func queryAccountInfo(c *gin.Context) {
 		return
 	}
 
-	// TODO By FanYang imp
+	// use owner public key
+	data, err := db.QueryAccountByPermission("owner", params.PublicKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	res := queryAccountInfoRsp{
-		AccountName: []types.Account{
-			{"main", "eosio.acc1"},
-			{"main", "eosio.acc2"},
-			{"main", "eosio.acc3"},
-			{"main", "eosio.acc4"},
-			{"side", "eosio.acc5"},
-		},
+		AccountName: make([]types.Account, 0, len(data)),
+	}
+
+	for _, d := range data {
+		res.AccountName = append(res.AccountName, types.Account{
+			Name:  d.Name,
+			Chain: d.Chain,
+		})
 	}
 
 	c.JSON(http.StatusOK, res)
