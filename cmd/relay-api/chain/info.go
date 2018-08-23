@@ -3,7 +3,7 @@ package chain
 import (
 	"net/http"
 
-	"github.com/eosforce/relay/types"
+	"github.com/eosforce/relay/db"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,6 +14,7 @@ type getChainInfoReq struct {
 type getChainInfoRsp struct {
 	ChainName string `json:"account"`
 	Note      string `json:"note"`
+	Typ       string `json:"typ"`
 }
 
 // getAccountInfo get account info by name
@@ -24,27 +25,40 @@ func getChainInfo(c *gin.Context) {
 		return
 	}
 
-	// TODO By FanYang imp
+	data, err := db.GetChain(params.ChainName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if data == nil {
+		c.JSON(http.StatusOK, getChainInfoRsp{})
+		return
+	}
+
 	res := getChainInfoRsp{
 		ChainName: params.ChainName,
-		Note:      "ddddddddd",
+		Note:      data.Note,
+		Typ:       data.Typ,
 	}
 
 	c.JSON(http.StatusOK, res)
 }
 
 type getChainsRsp struct {
-	ChainNames []types.Chain `json:"chains"`
+	ChainNames []db.ChainData `json:"chains"`
 }
 
 // getAccountInfo get account info by name
 func getChains(c *gin.Context) {
-	// TODO By FanYang imp
+	data, err := db.GetChains()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	res := getChainsRsp{
-		ChainNames: []types.Chain{
-			{"main", "main chain"},
-			{"side", "side chain"},
-		},
+		ChainNames: data,
 	}
 
 	c.JSON(http.StatusOK, res)
