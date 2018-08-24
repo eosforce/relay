@@ -49,7 +49,7 @@ func (a Asset) String() string {
 		result = strInt[:len(strInt)-int(a.Symbol.Precision)] + "." + strInt[len(strInt)-int(a.Symbol.Precision):]
 	}
 
-	return fmt.Sprintf("%s:%s %s", a.Chain, result, a.Symbol.Symbol)
+	return fmt.Sprintf("%s %s", result, a.Symbol)
 }
 
 // NewAsset create asset
