@@ -9,6 +9,7 @@ import (
 
 	"github.com/cihub/seelog"
 	eos "github.com/eoscanada/eos-go"
+	"github.com/eosforce/relay/exchange/utils"
 	"github.com/eosforce/relay/types"
 	eosforce "github.com/fanyang1988/eos-go"
 )
@@ -33,7 +34,7 @@ func TestOrderBook(t *testing.T) {
 		asset := types.NewAsset(10000000, pair.TokenB)
 		for {
 			asset.Amount++
-			book.Buy(buyer, asset, 1000+rand.Int63n(1000))
+			book.Buy(buyer, asset, utils.NewPriceFromInt(pair, 1000+rand.Int63n(1000)))
 			time.Sleep(1 * time.Microsecond)
 		}
 	}()
@@ -42,7 +43,7 @@ func TestOrderBook(t *testing.T) {
 		asset := types.NewAsset(10000000, pair.TokenA)
 		for {
 			asset.Amount++
-			book.Sell(seller, asset, 1000+rand.Int63n(1000))
+			book.Sell(seller, asset, utils.NewPriceFromInt(pair, 1000+rand.Int63n(1000)))
 			time.Sleep(1 * time.Microsecond)
 		}
 	}()

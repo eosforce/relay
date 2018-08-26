@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/cihub/seelog"
+	"github.com/eosforce/relay/exchange/utils"
 	"github.com/eosforce/relay/types"
 )
 
@@ -58,14 +59,14 @@ func (o *OrderBook) pushOrder(order *Order) error {
 }
 
 // Buy add a buy order
-func (o *OrderBook) Buy(account types.Account, asset types.Asset, price int64) error {
+func (o *OrderBook) Buy(account types.Account, asset types.Asset, price utils.Price) error {
 	// FIXME buy other
 	order := NewBuy(account, o.pair, asset, price)
 	return o.pushOrder(&order)
 }
 
 // Sell add a buy order
-func (o *OrderBook) Sell(account types.Account, asset types.Asset, price int64) error {
+func (o *OrderBook) Sell(account types.Account, asset types.Asset, price utils.Price) error {
 	// FIXME buy other
 	order := NewSell(account, o.pair, asset, price)
 	return o.pushOrder(&order)

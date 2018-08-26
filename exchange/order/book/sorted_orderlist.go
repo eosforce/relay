@@ -42,9 +42,9 @@ func (s *SortedOrderList) Less(i, j int) bool {
 		return s.orderList[i].UpdateTime.UnixNano() > s.orderList[j].UpdateTime.UnixNano()
 	}
 	if s.isBigFirst {
-		return s.orderList[i].Price < s.orderList[j].Price
+		return s.orderList[i].Price.Less(&s.orderList[j].Price)
 	} else {
-		return s.orderList[i].Price > s.orderList[j].Price
+		return s.orderList[i].Price.More(&s.orderList[j].Price)
 	}
 }
 

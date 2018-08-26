@@ -3,6 +3,7 @@ package orderBook
 import (
 	"testing"
 
+	"github.com/eosforce/relay/exchange/utils"
 	"github.com/eosforce/relay/types"
 
 	"github.com/cihub/seelog"
@@ -26,22 +27,22 @@ func TestSortedOrderList_Sort(t *testing.T) {
 	sol := NewSortedOrderList(false, 1024)
 	sol.Append(NewBuy(
 		account, pair,
-		types.NewAssetFromEosforce("main", 11, eosforce.EOSSymbol), 11))
+		types.NewAssetFromEosforce("main", 11, eosforce.EOSSymbol), utils.NewPriceFromInt(pair, 11)))
 	sol.Append(NewBuy(
 		account, pair,
-		types.NewAssetFromEosforce("main", 22, eosforce.EOSSymbol), 2))
+		types.NewAssetFromEosforce("main", 22, eosforce.EOSSymbol), utils.NewPriceFromInt(pair, 2)))
 	sol.Append(NewBuy(
 		account, pair,
-		types.NewAssetFromEosforce("main", 33, eosforce.EOSSymbol), 3))
+		types.NewAssetFromEosforce("main", 33, eosforce.EOSSymbol), utils.NewPriceFromInt(pair, 3)))
 	sol.Append(NewBuy(
 		account, pair,
-		types.NewAssetFromEosforce("main", 44, eosforce.EOSSymbol), 4))
+		types.NewAssetFromEosforce("main", 44, eosforce.EOSSymbol), utils.NewPriceFromInt(pair, 4)))
 	sol.Append(NewBuy(
 		account, pair,
-		types.NewAssetFromEosforce("main", 66, eosforce.EOSSymbol), 5))
+		types.NewAssetFromEosforce("main", 66, eosforce.EOSSymbol), utils.NewPriceFromInt(pair, 5)))
 	sol.Append(NewBuy(
 		account, pair,
-		types.NewAssetFromEosforce("main", 55, eosforce.EOSSymbol), 5))
+		types.NewAssetFromEosforce("main", 55, eosforce.EOSSymbol), utils.NewPriceFromInt(pair, 5)))
 
 	sol.Sort()
 

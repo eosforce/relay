@@ -5,6 +5,7 @@ import (
 
 	"fmt"
 
+	"github.com/eosforce/relay/exchange/utils"
 	"github.com/eosforce/relay/types"
 )
 
@@ -22,11 +23,11 @@ type Order struct {
 	Pair       types.ExchangePair `json:"pair"`
 	Type       int                `json:"type"` // sell or buy
 	Asset      types.Asset        `json:"asset"`
-	Price      int64              `json:"price"`
+	Price      utils.Price        `json:"price"`
 }
 
 // NewBuy make a buy order
-func NewBuy(account types.Account, pair types.ExchangePair, asset types.Asset, price int64) Order {
+func NewBuy(account types.Account, pair types.ExchangePair, asset types.Asset, price utils.Price) Order {
 	return Order{
 		Account:    account,
 		Type:       OrderBuy,
@@ -38,7 +39,7 @@ func NewBuy(account types.Account, pair types.ExchangePair, asset types.Asset, p
 }
 
 // NewSell make a sell order
-func NewSell(account types.Account, pair types.ExchangePair, asset types.Asset, price int64) Order {
+func NewSell(account types.Account, pair types.ExchangePair, asset types.Asset, price utils.Price) Order {
 	return Order{
 		Account:    account,
 		Type:       OrderSell,
@@ -60,7 +61,7 @@ func (o Order) String() string {
 	}
 
 	return fmt.Sprintf(
-		"%s %s %s From %s By %d",
+		"%s %s %s From %s By %s",
 		o.Account, typStr, o.Asset, forSymbol, o.Price,
 	)
 }
