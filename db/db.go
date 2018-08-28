@@ -8,10 +8,10 @@ var database *pg.DB
 
 // PostgresCfg cfg for postgresql
 type PostgresCfg struct {
-	Address  string `toml:"address"`
-	User     string `toml:"user"`
-	Password string `toml:"password"`
-	Database string `toml:"database"`
+	Address  string `toml:"address" json:"address"`
+	User     string `toml:"user" json:"user"`
+	Password string `toml:"password" json:"password"`
+	Database string `toml:"database" json:"database"`
 }
 
 // InitDB new database then connect

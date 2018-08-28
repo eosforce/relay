@@ -4,12 +4,12 @@ import (
 	"flag"
 
 	"github.com/cihub/seelog"
-	"github.com/eosforce/relay/cmd/logger-cfg"
 	"github.com/eosforce/relay/cmd/relay-api/http"
 	"github.com/eosforce/relay/token"
 	"github.com/eosforce/relay/types"
 	"github.com/gin-gonic/gin"
 
+	"github.com/eosforce/relay/cmd/config"
 	_ "github.com/eosforce/relay/cmd/relay-api/account"
 	_ "github.com/eosforce/relay/cmd/relay-api/chain"
 	_ "github.com/eosforce/relay/cmd/relay-api/token"
@@ -56,7 +56,7 @@ func main() {
 		Symbol:    "TST",
 	})
 
-	loggerCfg.InitLogger("relay_api", *logCfg)
+	config.InitLogger("relay_api", *logCfg)
 
 	http.InitRouter(*isDebug)
 

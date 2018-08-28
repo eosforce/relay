@@ -3,6 +3,7 @@ package wallets
 import (
 	"sync"
 
+	"github.com/eosforce/relay/cmd/config"
 	"github.com/fanyang1988/eos-go"
 	"github.com/pkg/errors"
 )
@@ -13,6 +14,16 @@ type WalletInfo struct {
 	URL        string
 	WalletName string
 	ChainName  string
+}
+
+// NewWalletInfoFromCfg create a wallet info from cfg
+func NewWalletInfoFromCfg(cfg *config.ChainCfg) WalletInfo {
+	return WalletInfo{
+		APIURL:     cfg.ApiURL,
+		URL:        cfg.URL,
+		WalletName: "default",
+		ChainName:  cfg.Name,
+	}
 }
 
 type manager struct {

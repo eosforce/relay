@@ -1,4 +1,4 @@
-package loggerCfg
+package config
 
 import (
 	"strings"

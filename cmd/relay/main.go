@@ -10,7 +10,7 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain"
 	"github.com/eosforce/relay/chain/wallets"
-	"github.com/eosforce/relay/cmd/logger-cfg"
+	"github.com/eosforce/relay/cmd/config"
 	"github.com/eosforce/relay/db"
 )
 
@@ -21,64 +21,30 @@ func main() {
 	defer seelog.Flush()
 	flag.Parse()
 
-	loggerCfg.InitLogger("relay", *logCfg)
+	var cfg config.RelayCfg
 
-	// for debug
-	mainOpt := chain.WatchOpt{
-		ApiURL: "http://127.0.0.1:8001",
-		P2PAddresses: []string{
-			"127.0.0.1:9002",
-			"127.0.0.1:9003",
-			"127.0.0.1:9004",
-			"127.0.0.1:9005",
-			"127.0.0.1:9006",
-			"127.0.0.1:9007",
-			"127.0.0.1:9008",
-			"127.0.0.1:9009",
-			"127.0.0.1:9010",
-		},
-		Type: chain.TypeBaseEosforce,
-		Name: "main",
+	config.InitLogger("relay", *logCfg)
+
+	err := config.LoadJsonCfg("./cfg.json", &cfg)
+	if err != nil {
+		seelog.Errorf("load cfg err by %s", err.Error())
+		return
 	}
-	wallets.Get().RegWallet(wallets.WalletInfo{
-		APIURL:     "http://127.0.0.1:8001",
-		URL:        "http://127.0.0.1:6666",
-		ChainName:  "main",
-		WalletName: "default",
-	})
 
-	sideOpt := chain.WatchOpt{
-		ApiURL: "http://127.0.0.1:18001",
-		P2PAddresses: []string{
-			"127.0.0.1:19002",
-			"127.0.0.1:19003",
-			"127.0.0.1:19004",
-			"127.0.0.1:19005",
-			"127.0.0.1:19006",
-			"127.0.0.1:19007",
-			"127.0.0.1:19008",
-			"127.0.0.1:19009",
-			"127.0.0.1:19010",
-		},
-		Type: chain.TypeBaseEos,
-		Name: "side",
+	mainOpt := chain.NewWatchOptByCfg(&cfg.Main)
+	wallets.Get().RegWallet(wallets.NewWalletInfoFromCfg(&cfg.Main))
+
+	sideOpts := make([]chain.WatchOpt, 0, len(cfg.Side))
+	for _, sideCfg := range cfg.Side {
+		sideOpt := chain.NewWatchOptByCfg(&sideCfg)
+		sideOpts = append(sideOpts, sideOpt)
+		wallets.Get().RegWallet(wallets.NewWalletInfoFromCfg(&sideCfg))
 	}
-	wallets.Get().RegWallet(wallets.WalletInfo{
-		APIURL:     "http://127.0.0.1:18001",
-		URL:        "http://127.0.0.1:16666",
-		ChainName:  "side",
-		WalletName: "default",
-	})
 
-	db.InitDB(db.PostgresCfg{
-		Address:  "127.0.0.1:5432",
-		User:     "pgfy",
-		Password: "123456",
-		Database: "test3",
-	})
+	db.InitDB(cfg.DB)
 
-	manager := chain.NewManager(mainOpt, sideOpt)
-	err := manager.Start()
+	manager := chain.NewManager(mainOpt, sideOpts...)
+	err = manager.Start()
 	if err != nil {
 		seelog.Errorf("start chain mng err By %s", err.Error())
 		return
@@ -87,5 +53,6 @@ func main() {
 	defer manager.Stop()
 	for {
 		time.Sleep(5 * time.Second)
+		// TODO exit and ping
 	}
 }
