@@ -4,16 +4,14 @@ import (
 	"flag"
 
 	"github.com/cihub/seelog"
-	"github.com/eosforce/relay/cmd/relay-api/http"
-	"github.com/eosforce/relay/token"
-	"github.com/eosforce/relay/types"
-	"github.com/gin-gonic/gin"
-
 	"github.com/eosforce/relay/cmd/config"
 	_ "github.com/eosforce/relay/cmd/relay-api/account"
 	_ "github.com/eosforce/relay/cmd/relay-api/chain"
+	"github.com/eosforce/relay/cmd/relay-api/http"
 	_ "github.com/eosforce/relay/cmd/relay-api/token"
 	"github.com/eosforce/relay/db"
+	"github.com/eosforce/relay/token"
+	"github.com/eosforce/relay/types"
 )
 
 // relay http api
@@ -26,13 +24,15 @@ func main() {
 	defer seelog.Flush()
 	flag.Parse()
 
-	// TODO use cfg
-	db.InitDB(db.PostgresCfg{
-		Address:  "127.0.0.1:5432",
-		User:     "pgfy",
-		Password: "123456",
-		Database: "test3",
-	})
+	var cfg config.RelayCfg
+
+	err := config.LoadJsonCfg("./cfg.json", &cfg)
+	if err != nil {
+		seelog.Errorf("load cfg err by %s", err.Error())
+		return
+	}
+
+	db.InitDB(cfg.DB)
 
 	// TODO By FanYang user def symbol
 	token.Reg(types.Symbol{
@@ -60,13 +60,7 @@ func main() {
 
 	http.InitRouter(*isDebug)
 
-	http.Router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
-	err := http.Router.Run(*url)
+	err = http.Router.Run(*url)
 	if err != nil {
 		seelog.Errorf("run err by %s", err.Error())
 	}

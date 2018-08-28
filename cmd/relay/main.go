@@ -12,6 +12,8 @@ import (
 	"github.com/eosforce/relay/chain/wallets"
 	"github.com/eosforce/relay/cmd/config"
 	"github.com/eosforce/relay/db"
+	"github.com/eosforce/relay/token"
+	"github.com/eosforce/relay/types"
 )
 
 var logCfg = flag.String("logCfg", "", "log xml cfg file path")
@@ -21,9 +23,9 @@ func main() {
 	defer seelog.Flush()
 	flag.Parse()
 
-	var cfg config.RelayCfg
-
 	config.InitLogger("relay", *logCfg)
+
+	var cfg config.RelayCfg
 
 	err := config.LoadJsonCfg("./cfg.json", &cfg)
 	if err != nil {
@@ -42,6 +44,28 @@ func main() {
 	}
 
 	db.InitDB(cfg.DB)
+
+	// TODO By FanYang user def symbol
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "main",
+		Symbol:    "EOS",
+	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "side",
+		Symbol:    "EOS",
+	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "side",
+		Symbol:    "SYS",
+	})
+	token.Reg(types.Symbol{
+		Precision: 4,
+		Chain:     "main",
+		Symbol:    "TST",
+	})
 
 	manager := chain.NewManager(mainOpt, sideOpts...)
 	err = manager.Start()
