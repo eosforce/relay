@@ -4,6 +4,8 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain/base/chain-msg"
 	"github.com/eosforce/relay/const"
+	"github.com/eosforce/relay/db"
+	"github.com/eosforce/relay/token"
 	"github.com/eosforce/relay/types"
 	"github.com/fanyang1988/eos-go"
 )
@@ -70,6 +72,40 @@ func (h *Handler) Reg(msgHandler *chainMsg.Handler) {
 		if err != nil {
 			seelog.Errorf("do token out cmd err %s %s %s by %s",
 				string(name), h.Name(), asset.String(), err.Error())
+		}
+	})
+	msgHandler.AddHandler(h.Name(), consts.TestExchange, func(msg *chainMsg.ChainMsg) {
+		name := msg.Account
+
+		// "1000.0000 EOS:main:SYS:side"
+
+		if len(msg.ExtParams) < 4 {
+			seelog.Errorf("exchange no params")
+			return
+		}
+
+		af, err := eos.NewAsset(msg.ExtParams[0])
+		if err != nil {
+			seelog.Errorf("exchange err by asset %s %s",
+				err.Error(), msg.ExtParams[0])
+			return
+		}
+
+		asset_to_exchange := types.NewAssetFromEosforce(msg.ExtParams[1], af.Amount, af.Symbol)
+
+		symbol_to_get, err := token.GetSymbol(msg.ExtParams[3], msg.ExtParams[2])
+		if err != nil {
+			seelog.Errorf("exchange err by exchange symbol %s %s:%s",
+				err.Error(), msg.ExtParams[3], msg.ExtParams[2])
+			return
+		}
+
+		seelog.Debugf("exchange test from %s --> %s", asset_to_exchange, symbol_to_get)
+		err = db.ExchangeTokenTest(name, h.Name(), asset_to_exchange, symbol_to_get)
+
+		if err != nil {
+			seelog.Errorf("do token out cmd err %s %s -> %s %s by %s",
+				string(name), h.Name(), asset_to_exchange, symbol_to_get, err.Error())
 		}
 	})
 }

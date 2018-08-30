@@ -82,6 +82,49 @@ func GetAccountToken(db *pg.DB, name, chain, tokenChain, symbol string) (types.A
 	), nil
 }
 
+func addTokenImp(tx *pg.Tx, name, chain string, asset types.Asset) error {
+	newToken := AccountToken{
+		Name:       name,
+		Chain:      chain,
+		TokenChain: string(asset.Chain),
+		Symbol:     asset.GetSymbol(),
+		Amount:     asset.Amount,
+	}
+
+	var rs []AccountToken
+	err := tx.Model(&rs).
+		Where("name=? and chain=? and token_chain=? and symbol=?",
+			name, chain, string(asset.Chain), string(asset.Symbol.Symbol)).
+		Select()
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
+		return errors.WithMessage(err, "add token select err ")
+	}
+	if len(rs) != 0 {
+		// only use first
+		// TODO By FanYang process Overflow Err
+		newToken.Amount += rs[0].Amount
+		_, err = tx.Model(&newToken).Update()
+	} else {
+		_, err = tx.Model(&newToken).Create()
+	}
+
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
+		return errors.WithMessage(err, "create add token")
+	}
+
+	return nil
+}
+
 // AddToken add token to account
 func AddToken(name, chain string, asset types.Asset) (resErr error) {
 	db := Get()
@@ -90,6 +133,7 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 
 	// use SERIALIZABLE transaction
 	// need retry when readwrite conflict
+	// FIXME By FanYang to define a common err for error to stop retry
 	for i := 0; i < MaxRetryTime; i++ {
 		resErr = db.RunInTransaction(func(tx *pg.Tx) error {
 			// to fix Concurrency error,
@@ -98,46 +142,7 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 				return err
 			}
 
-			newToken := AccountToken{
-				Name:       name,
-				Chain:      chain,
-				TokenChain: string(asset.Chain),
-				Symbol:     asset.GetSymbol(),
-				Amount:     asset.Amount,
-			}
-
-			var rs []AccountToken
-			err = tx.Model(&rs).
-				Where("name=? and chain=? and token_chain=? and symbol=?",
-					name, chain, string(asset.Chain), string(asset.Symbol.Symbol)).
-				Select()
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					return errors.WithStack(
-						seelog.Errorf("rollback err by %s when err %s",
-							rollbackErr.Error(), err.Error()))
-				}
-				return errors.WithMessage(err, "add token select err ")
-			}
-			if len(rs) != 0 {
-				// only use first
-				// TODO By FanYang process Overflow Err
-				newToken.Amount += rs[0].Amount
-				_, err = tx.Model(&newToken).Update()
-			} else {
-				_, err = tx.Model(&newToken).Create()
-			}
-
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					return errors.WithStack(
-						seelog.Errorf("rollback err by %s when err %s",
-							rollbackErr.Error(), err.Error()))
-				}
-				return errors.WithMessage(err, "create add token")
-			}
-
-			return nil
+			return addTokenImp(tx, name, chain, asset)
 		})
 		if resErr != nil {
 			seelog.Warn("do add token err by ", resErr.Error())
@@ -151,6 +156,48 @@ func AddToken(name, chain string, asset types.Asset) (resErr error) {
 
 // ErrNoEnoughToken no enough token
 var ErrNoEnoughToken = errors.New("ErrNoEnoughToken")
+
+func costTokenImp(tx *pg.Tx, name, chain string, asset types.Asset) error {
+	newToken := AccountToken{
+		Name:       name,
+		Chain:      chain,
+		TokenChain: string(asset.Chain),
+		Symbol:     asset.GetSymbol(),
+		Amount:     0,
+	}
+
+	var rs []AccountToken
+	err := tx.Model(&rs).
+		Where("name=? and chain=? and token_chain=? and symbol=?",
+			name, chain, string(asset.Chain), string(asset.Symbol.Symbol)).
+		Select()
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
+		return errors.WithMessage(err, "add token select err ")
+	}
+
+	if len(rs) == 0 || rs[0].Amount < asset.Amount {
+		return ErrNoEnoughToken
+	}
+
+	newToken.Amount = rs[0].Amount - asset.Amount
+	_, err = tx.Model(&newToken).Update()
+
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.WithStack(
+				seelog.Errorf("rollback err by %s when err %s",
+					rollbackErr.Error(), err.Error()))
+		}
+		return errors.WithMessage(err, "create add token")
+	}
+
+	return nil
+}
 
 // CostToken cost token from account if no token return a error
 func CostToken(name, chain string, asset types.Asset) (resErr error) {
@@ -168,6 +215,45 @@ func CostToken(name, chain string, asset types.Asset) (resErr error) {
 
 	// use SERIALIZABLE transaction
 	// need retry when readwrite conflict
+	// FIXME By FanYang to define a common err for error to stop retry
+	for i := 0; i < MaxRetryTime; i++ {
+		resErr = db.RunInTransaction(func(tx *pg.Tx) error {
+			// to fix Concurrency error,
+			_, err := tx.Exec("set transaction isolation level serializable;")
+			if err != nil {
+				return err
+			}
+			return costTokenImp(tx, name, chain, asset)
+		})
+
+		if resErr != nil {
+			seelog.Warn("do cost token err ", resErr.Error())
+		} else {
+			return nil
+		}
+
+	}
+
+	return errors.WithMessage(resErr, "err n times")
+}
+
+// ExchangeTokenTest a simple exchange token to 1:1
+func ExchangeTokenTest(name, chain string, from types.Asset, to types.Symbol) (resErr error) {
+	if from.Amount < 0 {
+		return ErrNoEnoughToken
+	}
+
+	if from.Amount == 0 {
+		return nil
+	}
+
+	seelog.Infof("CostToken %s %s %s --> %s", name, chain, from, to)
+
+	db := Get()
+
+	// use SERIALIZABLE transaction
+	// need retry when readwrite conflict
+	// FIXME By FanYang to define a common err for error to stop retry
 	for i := 0; i < MaxRetryTime; i++ {
 		resErr = db.RunInTransaction(func(tx *pg.Tx) error {
 			// to fix Concurrency error,
@@ -176,45 +262,14 @@ func CostToken(name, chain string, asset types.Asset) (resErr error) {
 				return err
 			}
 
-			newToken := AccountToken{
-				Name:       name,
-				Chain:      chain,
-				TokenChain: string(asset.Chain),
-				Symbol:     asset.GetSymbol(),
-				Amount:     0,
-			}
+			rate := 1.0
 
-			var rs []AccountToken
-			err = tx.Model(&rs).
-				Where("name=? and chain=? and token_chain=? and symbol=?",
-					name, chain, string(asset.Chain), string(asset.Symbol.Symbol)).
-				Select()
+			err = costTokenImp(tx, name, chain, from)
 			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					return errors.WithStack(
-						seelog.Errorf("rollback err by %s when err %s",
-							rollbackErr.Error(), err.Error()))
-				}
-				return errors.WithMessage(err, "add token select err ")
+				return errors.WithMessage(err, "cost err")
 			}
 
-			if len(rs) == 0 || rs[0].Amount < asset.Amount {
-				return ErrNoEnoughToken
-			}
-
-			newToken.Amount = rs[0].Amount - asset.Amount
-			_, err = tx.Model(&newToken).Update()
-
-			if err != nil {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					return errors.WithStack(
-						seelog.Errorf("rollback err by %s when err %s",
-							rollbackErr.Error(), err.Error()))
-				}
-				return errors.WithMessage(err, "create add token")
-			}
-
-			return nil
+			return addTokenImp(tx, name, chain, types.NewAsset(int64(float64(from.Amount)*rate), to))
 		})
 
 		if resErr != nil {
