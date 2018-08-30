@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import argparse
 import json
@@ -34,22 +34,22 @@ relayAccounts = [
     'r.token.in',
     'r.token.out',
     'r.acc.map',
-    'r.test.exchange',
+    'r.t.exchange',
 ]
 
 def jsonArg(a):
     return " '" + json.dumps(a) + "' "
 
 def run(args):
-    print('bios-boot-tutorial.py:', args)
+    print('bios-boot-eos.py:', args)
     logFile.write(args + '\n')
     if subprocess.call(args, shell=True):
-        print('bios-boot-tutorial.py: exiting because of error')
+        print('bios-boot-eos.py: exiting because of error')
         sys.exit(1)
 
 def retry(args):
     while True:
-        print('bios-boot-tutorial.py:', args)
+        print('bios-boot-eos.py:', args)
         logFile.write(args + '\n')
         if subprocess.call(args, shell=True):
             print('*** Retry')
@@ -57,18 +57,18 @@ def retry(args):
             break
 
 def background(args):
-    print('bios-boot-tutorial.py:', args)
+    print('bios-boot-eos.py:', args)
     logFile.write(args + '\n')
     return subprocess.Popen(args, shell=True)
 
 def getOutput(args):
-    print('bios-boot-tutorial.py:', args)
+    print('bios-boot-eos.py:', args)
     logFile.write(args + '\n')
     proc = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE)
     return proc.communicate()[0].decode('utf-8')
 
 def getJsonOutput(args):
-    print('bios-boot-tutorial.py:', args)
+    print('bios-boot-eos.py:', args)
     logFile.write(args + '\n')
     proc = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE)
     return json.loads(proc.communicate()[0])
@@ -81,7 +81,7 @@ def sleep(t):
 def startWallet():
     run('rm -rf ' + os.path.abspath(args.wallet_dir))
     run('mkdir -p ' + os.path.abspath(args.wallet_dir))
-    background(args.keosd + ' --http-server-address 127.0.0.1:16666 --wallet-dir %s' % (os.path.abspath(args.wallet_dir)))
+    background(args.keosd + ' --unlock-timeout %d --http-server-address 127.0.0.1:16666 --wallet-dir %s' % (900000, os.path.abspath(args.wallet_dir)))
     sleep(.4)
     run(args.cleos + 'wallet create -f ./wallet/passwd')
 
@@ -122,8 +122,8 @@ def startNode(nodeIndex, account):
         '    --config-dir ' + os.path.abspath(dir) +
         '    --data-dir ' + os.path.abspath(dir) +
         '    --chain-state-db-size-mb 1024'
-        '    --http-server-address 127.0.0.1:' + str(18000 + nodeIndex) +
-        '    --p2p-listen-endpoint 127.0.0.1:' + str(19000 + nodeIndex) +
+        '    --http-server-address 0.0.0.0:' + str(18000 + nodeIndex) +
+        '    --p2p-listen-endpoint 0.0.0.0:' + str(19000 + nodeIndex) +
         '    --max-clients ' + str(maxClients) +
         '    --p2p-max-nodes-per-host ' + str(maxClients) +
         '    --enable-stale-production'
@@ -149,23 +149,19 @@ def intToCurrency(i):
     return '%d.%04d %s' % (i // 10000, i % 10000, args.symbol)
 
 def allocateFunds(b, e):
-    dist = numpy.random.pareto(1.161, e - b).tolist() # 1.161 = 80/20 rule
-    dist.sort()
-    dist.reverse()
-    factor = 1000000000 / sum(dist)
     total = 0
     for i in range(b, e):
-        funds = round(factor * dist[i - b] * 10000)
+        funds = 1000000000
         if i >= firstProducer and i < firstProducer + numProducers:
-            funds = max(funds, round(args.min_producer_funds * 10000))
+            funds = 2000000000
         total += funds
         accounts[i]['funds'] = funds
     return total
 
 def createStakedAccounts(b, e):
-    ramFunds = round(args.ram_funds * 10000)
-    configuredMinStake = round(args.min_stake * 10000)
-    maxUnstaked = round(args.max_unstaked * 10000)
+    stakeNet = 500000
+    stakeCpu = 500000
+    ramFunds = 500000
     for i in range(b, e):
         a = accounts[i]
         funds = a['funds']
@@ -175,11 +171,7 @@ def createStakedAccounts(b, e):
         if funds < ramFunds:
             print('skipping %s: not enough funds to cover ram' % a['name'])
             continue
-        minStake = min(funds - ramFunds, configuredMinStake)
-        unstaked = min(funds - ramFunds - minStake, maxUnstaked)
-        stake = funds - ramFunds - unstaked
-        stakeNet = round(stake / 2)
-        stakeCpu = stake - stakeNet
+        unstaked = funds - ramFunds - stakeNet - stakeCpu
         print('%s: total funds=%s, ram=%s, net=%s, cpu=%s, unstaked=%s' % (a['name'], intToCurrency(a['funds']), intToCurrency(ramFunds), intToCurrency(stakeNet), intToCurrency(stakeCpu), intToCurrency(unstaked)))
         assert(funds == ramFunds + stakeNet + stakeCpu + unstaked)
         retry(args.cleos + 'system newaccount --transfer eosio %s %s --stake-net "%s" --stake-cpu "%s" --buy-ram "%s"   ' % 
@@ -386,7 +378,7 @@ parser.add_argument('--min-producer-funds', metavar='', help="Minimum producer f
 parser.add_argument('--num-producers-vote', metavar='', help="Number of producers for which each user votes", type=int, default=20)
 parser.add_argument('--num-voters', metavar='', help="Number of voters", type=int, default=10)
 parser.add_argument('--num-senders', metavar='', help="Number of users to transfer funds randomly", type=int, default=10)
-parser.add_argument('--producer-sync-delay', metavar='', help="Time (s) to sleep to allow producers to sync", type=int, default=80)
+parser.add_argument('--producer-sync-delay', metavar='', help="Time (s) to sleep to allow producers to sync", type=int, default=10)
 parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
 parser.add_argument('-H', '--http-port', type=int, default=18000, metavar='', help='HTTP port for cleos')
 parser.add_argument('-N', '--side-num', type=int, default=0, help="Side Chain num")
@@ -409,7 +401,7 @@ args.wallet_dir = args.wallet_dir + dataRoot
 args.log_path = './' + dataRoot + args.log_path
 
 if subprocess.call('mkdir -p ./' + dataRoot, shell=True):
-        print('bios-boot-tutorial.py: exiting because of error')
+        print('bios-boot-eos.py: exiting because of error')
         sys.exit(1)
 
 args.cleos += '--url http://127.0.0.1:%d ' % args.http_port
@@ -442,4 +434,4 @@ for (flag, command, function, inAll, help) in commands:
             haveCommand = True
             function()
 if not haveCommand:
-    print('bios-boot-tutorial.py: Tell me what to do. -a does almost everything. -h shows options.')
+    print('bios-boot-eos.py: Tell me what to do. -a does almost everything. -h shows options.')

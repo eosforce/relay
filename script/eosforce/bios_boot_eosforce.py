@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import argparse
 import json
 import os
-import re
 import subprocess
 import sys
 import time
@@ -20,7 +19,7 @@ relayAccounts = [
     'r.token.in',
     'r.token.out',
     'r.acc.map',
-    'r.test.exchange'
+    'r.t.exchange'
 ]
 
 def jsonArg(a):
@@ -30,12 +29,12 @@ def run(args):
     print('bios-boot-tutorial.py:', args)
     logFile.write(args + '\n')
     if subprocess.call(args, shell=True):
-        print('bios-boot-tutorial.py: exiting because of error')
+        print('bios-boot-eosforce.py: exiting because of error')
         sys.exit(1)
 
 def retry(args):
     while True:
-        print('bios-boot-tutorial.py:', args)
+        print('bios-boot-eosforce.py:', args)
         logFile.write(args + '\n')
         if subprocess.call(args, shell=True):
             print('*** Retry')
@@ -43,7 +42,7 @@ def retry(args):
             break
 
 def background(args):
-    print('bios-boot-tutorial.py:', args)
+    print('bios-boot-eosforce.py:', args)
     logFile.write(args + '\n')
     return subprocess.Popen(args, shell=True)
 
@@ -235,4 +234,4 @@ for (flag, command, function, inAll, help) in commands:
             function()
 
 if not haveCommand:
-    print('bios-boot-tutorial.py: Tell me what to do. -a does almost everything. -h shows options.')
+    print('bios-boot-eosforce.py: Tell me what to do. -a does almost everything. -h shows options.')
