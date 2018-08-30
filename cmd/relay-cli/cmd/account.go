@@ -2,6 +2,7 @@ package relayCliCmd
 
 import (
 	"github.com/cihub/seelog"
+	"github.com/eosforce/relay/sdk"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +18,11 @@ var accountMapCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		defer seelog.Flush()
+		seelog.Infof("map account %s %s", args[0], args[1])
+		err := sdk.MapAccountToRelay(args[1], args[0])
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 
