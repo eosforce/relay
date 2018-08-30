@@ -26,6 +26,13 @@ For account in main chain, use eosio.transfer to tranfer 0.1 EOSC to "relay.a.ma
 cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action eosio transfer '{"from":"eosforce","to":"r.acc.map","quantity":"0.1000 EOS","memo":""}' -p eosforce
 ```
 
+in chain base by eos
+
+```
+cleos --wallet-url=http://127.0.0.1:16666 --url http://127.0.0.1:18001 push action eosio.token transfer '{"from":"useraaaaaaaa","to":"r.acc.map","quantity":"0.1000 EOS","memo":""}' -p useraaaaaaaa
+```
+
+
 For account in side chain, use token.transfer to tranfer 0.1 EOS to "relay.a.map" in side chain.
 
 ### 1.2 Token In
@@ -67,7 +74,7 @@ transfer like this:
 cleos --wallet-url http://127.0.0.1:6666 \
       --url http://127.0.0.1:8001 \
       push action eosio transfer \
-      '{"from":"eosforce","to":"r.token.out","quantity":"0.1000 EOS","memo":"1000.0000 EOS"}' \
+      '{"from":"eosforce","to":"r.token.out","quantity":"0.1000 EOS","memo":"acc:main:1000.0000 EOS"}' \
       -p eosforce
 ```
 
@@ -75,10 +82,10 @@ which means userAccount take out 100.0000 EOS from relay to main chain.
 
 `r.token.out` is fee account in main chain, after test that may be changed.
 
-memo like `main:100.0000 EOS` format is:
+memo like `acc:main:1000.0000 EOS` format is:
 
 ```
-{chainName}:{Asset}
+{name}:{chain}:{Asset}
 ```
 
 
@@ -156,6 +163,23 @@ transfer like this:
 User can define a token bancor exchange pair in relay, it can support two type token to exchange use bancor protocol in relay.
 
 TODO By FanYang define need params
+
+### 1.7 Test Token Exchange
+
+now we add a 1:1 test exchange bewteen diff token.
+
+```
+ ./cleos -u "http://127.0.0.1:8001" --wallet-url "http://127.0.0.1:6666"  push action eosio transfer '{"from":"eosforce","to":"r.t.exchange","quantity":"0.1000 EOS","memo":"1000.0000 EOS:main:SYS:side"}' -p eosforce
+```
+
+use main:eosforce 's 1000.0000 main:EOS to get 1000.0000 side:SYS.
+
+memo format:
+
+```
+{fromAsset:fromChain:ToSymbol:ToChain}
+```
+
 
 ## 2.Http API
 
