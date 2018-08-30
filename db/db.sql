@@ -1,4 +1,4 @@
-create table if not exists accounts
+create table if not exists public.accounts
 (
 	name varchar(32) not null,
 	chain varchar(16) not null,
@@ -7,7 +7,7 @@ create table if not exists accounts
 		primary key (chain, name)
 );
 
-create table if not exists account_tokens
+create table if not exists public.account_tokens
 (
 	name varchar(32) not null,
 	chain varchar(16) not null,
@@ -20,7 +20,7 @@ create table if not exists account_tokens
 		primary key (chain, name, token_chain, symbol)
 );
 
-create table account_permissions
+create table public.account_permissions
 (
   name       varchar(32) not null,
   chain      varchar(16) not null,
@@ -30,8 +30,17 @@ create table account_permissions
   primary key (name, chain)
 );
 
-alter table account_permissions
-  owner to pgfy;
-
 create index account_permissions_permission_pubkey_index
-  on account_permissions (permission, pubkey);
+  on public.account_permissions (permission, pubkey);
+
+create table if not exists public.chain_data
+(
+  name varchar(16) not null
+    constraint chain_data_pkey
+    primary key,
+  note varchar(256) default '' :: character varying,
+  typ  varchar(16) not null
+);
+
+create unique index if not exists chain_data_name_uindex
+  on public.chain_data (name);
