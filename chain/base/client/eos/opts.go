@@ -11,7 +11,10 @@ import (
 )
 
 // Transfer transfer token to account
-func (e *Client) Transfer(from, to string, asset types.Asset) error {
+func (e *Client) Transfer(from, to string, asset types.Asset, memo string) error {
+	if memo == "" {
+		memo = fmt.Sprintf("by relay %d %s", e.waterfallNum, time.Now())
+	}
 	_, err := e.PushEOSCActions(token.NewTransfer(
 		eos.AN(from),
 		eos.AN(to),

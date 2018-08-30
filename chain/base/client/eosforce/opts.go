@@ -12,9 +12,11 @@ import (
 )
 
 // Transfer transfer token to account
-func (e *Client) Transfer(from, to string, asset types.Asset) error {
+func (e *Client) Transfer(from, to string, asset types.Asset, memo string) error {
 	var err error
-	memo := fmt.Sprintf("by relay %d %s", e.waterfallNum, time.Now())
+	if memo == "" {
+		memo = fmt.Sprintf("by relay %d %s", e.waterfallNum, time.Now())
+	}
 
 	if asset.Symbol.Symbol == eos.EOSSymbol.Symbol {
 		_, err = e.PushEOSCActions(eosforce.NewTransfer(

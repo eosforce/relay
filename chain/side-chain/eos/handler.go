@@ -58,20 +58,21 @@ func (h *Handler) Reg(msgHandler *chainMsg.Handler) {
 	msgHandler.AddHandler(h.Name(), consts.TokenOutAcc, func(msg *chainMsg.ChainMsg) {
 		name := msg.Account
 
-		if len(msg.ExtParams) < 1 {
+		if len(msg.ExtParams) < 3 {
 			seelog.Errorf("token out no params")
 			return
 		}
 
-		asset, err := eos.NewAsset(msg.ExtParams[0])
+		asset, err := eos.NewAsset(msg.ExtParams[2])
 
 		if err != nil {
 			seelog.Errorf("token out err by asset %s %s",
-				err.Error(), msg.ExtParams[0])
+				err.Error(), msg.ExtParams[2])
 			return
 		}
 
-		err = h.onTokenOut(name, types.NewAsset(asset.Amount, types.FromEosSymbol(msg.ChainName, asset.Symbol)))
+		err = h.onTokenOut(name, msg.ExtParams[0], msg.ExtParams[1],
+			types.NewAsset(asset.Amount, types.FromEosSymbol(msg.ExtParams[1], asset.Symbol)))
 		if err != nil {
 			seelog.Errorf("do token out cmd err %s %s %s by %s",
 				string(name), h.Name(), asset.String(), err.Error())

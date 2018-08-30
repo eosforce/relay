@@ -52,6 +52,24 @@ func (a Asset) String() string {
 	return fmt.Sprintf("%s %s", result, a.Symbol)
 }
 
+// StringInChain return the string in chain like 100.0000 EOS no chain name
+func (a Asset) StringInChain() string {
+	strInt := fmt.Sprintf("%d", a.Amount)
+	if len(strInt) < int(a.Symbol.Precision+1) {
+		// prepend `0` for the difference:
+		strInt = strings.Repeat("0", int(a.Symbol.Precision+uint8(1))-len(strInt)) + strInt
+	}
+
+	var result string
+	if a.Symbol.Precision == 0 {
+		result = strInt
+	} else {
+		result = strInt[:len(strInt)-int(a.Symbol.Precision)] + "." + strInt[len(strInt)-int(a.Symbol.Precision):]
+	}
+
+	return fmt.Sprintf("%s %s", result, a.Symbol.Symbol)
+}
+
 // NewAsset create asset
 func NewAsset(a int64, symbol Symbol) Asset {
 	return Asset{

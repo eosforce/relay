@@ -21,19 +21,19 @@ func (h *Handler) onTokenIn(account string, asset types.Asset) error {
 }
 
 // onTokenOut trans token from relay to its chain
-func (h *Handler) onTokenOut(account string, asset types.Asset) error {
+func (h *Handler) onTokenOut(account, accountTo, chain string, asset types.Asset) error {
 	seelog.Debugf("onTokenOut %s %s %s",
 		h.Name(), account, asset.String())
 
-	c := client.Get(h.Name())
-
 	// TODO Fee
 
-	// TODO Process Err
+	err := db.CostToken(account, h.Name(), asset)
+	if err != nil {
+		return err
+	}
 
-	db.CostToken(account, h.Name(), asset)
-
-	return c.Transfer(consts.TokenInAcc, account, asset)
+	c := client.Get(chain)
+	return c.Transfer(consts.TokenInAcc, accountTo, asset, "")
 }
 
 // TODO By FanYang onTokenExchange
