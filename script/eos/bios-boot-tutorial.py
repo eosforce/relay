@@ -34,6 +34,7 @@ relayAccounts = [
     'r.token.in',
     'r.token.out',
     'r.acc.map',
+    'r.test.exchange',
 ]
 
 def jsonArg(a):
@@ -185,12 +186,13 @@ def createStakedAccounts(b, e):
             (a['name'], a['pub'], intToCurrency(stakeNet), intToCurrency(stakeCpu), intToCurrency(ramFunds)))
         if unstaked:
             retry(args.cleos + 'transfer eosio %s "%s"' % (a['name'], intToCurrency(unstaked)))
+        retry(args.cleos + 'transfer eosio %s "%s"' % (a['name'], intToCurrency(1000000000)))
 
 def createRelayAccount(accounts):
     for a in accounts:
         retry(args.cleos + 'system newaccount --transfer eosio %s %s --stake-net "%s" --stake-cpu "%s" --buy-ram "%s"   ' %
-              (a, relayPubKey, intToCurrency(20000000), intToCurrency(20000000), intToCurrency(100000000)))
-        retry(args.cleos + 'transfer eosio %s "%s"' % (a, intToCurrency(100000000)))
+              (a, relayPubKey, intToCurrency(200000000), intToCurrency(200000000), intToCurrency(1000000000)))
+        retry(args.cleos + 'transfer eosio %s "%s"' % (a, intToCurrency(10000000000)))
 
 def regProducers(b, e):
     for i in range(b, e):
@@ -303,9 +305,9 @@ def stepInstallSystemContracts():
     run(args.cleos + 'set contract eosio.token ' + args.contracts_dir + 'eosio.token/')
     run(args.cleos + 'set contract eosio.msig ' + args.contracts_dir + 'eosio.msig/')
 def stepCreateTokens():
-    run(args.cleos + 'push action eosio.token create \'["eosio", "10000000000.0000 %s"]\' -p eosio.token' % (args.symbol))
+    run(args.cleos + 'push action eosio.token create \'["eosio", "20000000000.0000 %s"]\' -p eosio.token' % (args.symbol))
     totalAllocation = allocateFunds(0, len(accounts))
-    run(args.cleos + 'push action eosio.token issue \'["eosio", "%s", "memo"]\' -p eosio' % intToCurrency(totalAllocation + 10000000000))
+    run(args.cleos + 'push action eosio.token issue \'["eosio", "%s", "memo"]\' -p eosio' % intToCurrency(totalAllocation + 100000000000000))
     sleep(1)
 def stepSetSystemContract():
     retry(args.cleos + 'set contract eosio ' + args.contracts_dir + 'eosio.system/')

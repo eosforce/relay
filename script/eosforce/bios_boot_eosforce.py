@@ -20,6 +20,7 @@ relayAccounts = [
     'r.token.in',
     'r.token.out',
     'r.acc.map',
+    'r.test.exchange'
 ]
 
 def jsonArg(a):
@@ -79,7 +80,7 @@ def addB1Account():
 def addRelayAccount():
     for a in relayAccounts:
         run(args.cleos + 'create account eosforce ' + a + ' ' + relayPubKey)
-        run(args.cleos + 'push action eosio transfer \'{"from":"eosforce","to":"%s","quantity":"10000.0000 EOS","memo":""}\' -p eosforce' % a)
+        run(args.cleos + 'push action eosio transfer \'{"from":"eosforce","to":"%s","quantity":"100000.0000 EOS","memo":""}\' -p eosforce' % a)
 
 
 def startWallet():
