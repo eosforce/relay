@@ -40,3 +40,5 @@ script/eosforce/output.log
 script/eosforce/config/
 
 script/eosforce/config\.ini
+
+cmd/relay-cli/relay-cli

@@ -1,0 +1,33 @@
+<seelog>
+    <outputs>
+        <filter levels="trace">
+            <console formatid="common"/>
+        </filter>
+        <filter levels="debug">
+            <console formatid="coloredmagenta"/>
+        </filter>
+        <filter levels="info">
+            <console formatid="coloredyellow"/>
+        </filter>
+        <filter levels="warn">
+            <console formatid="coloredblue"/>
+        </filter>
+        <filter levels="error,critical">
+            <splitter formatid="coloredred">
+                <console/>
+                <file path="./log/eoscdb-err.log"/>
+            </splitter>
+        </filter>
+        <file formatid="common" path="./log/eoscdb.log"/>
+    </outputs>
+    <formats>
+        <format id="coloredblue"  format="[%Date %Time] %EscM(34)[%LEV] [%File(%Line)] %Msg%EscM(39)%n%EscM(0)"/>
+        <format id="coloredred"  format="[%Date %Time] %EscM(31)[%LEV] [%File(%Line)] %Msg%EscM(39)%n%EscM(0)"/>
+        <format id="coloredgreen"  format="[%Date %Time] %EscM(32)[%LEV] [%File(%Line)] %Msg%EscM(39)%n%EscM(0)"/>
+        <format id="coloredyellow"  format="[%Date %Time] %EscM(33)[%LEV] [%File(%Line)] %Msg%EscM(39)%n%EscM(0)"/>
+        <format id="coloredcyan"  format="[%Date %Time] %EscM(36)[%LEV] [%File(%Line)] %Msg%EscM(39)%n%EscM(0)"/>
+        <format id="coloredmagenta"  format="[%Date %Time] %EscM(35)[%LEV] [%File(%Line)] %Msg%EscM(39)%n%EscM(0)"/>
+        <format id="common"  format="[%Date %Time] [%LEV] [%File(%Line)] %Msg%n"/>
+        <format id="sentry"  format="%Msg%n"/>
+    </formats>
+</seelog>
