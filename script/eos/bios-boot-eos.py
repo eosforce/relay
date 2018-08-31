@@ -35,6 +35,7 @@ relayAccounts = [
     'r.token.out',
     'r.acc.map',
     'r.t.exchange',
+    'manager',
 ]
 
 def jsonArg(a):
@@ -93,8 +94,6 @@ def importKeys():
     for a in accounts:
         key = a['pvt']
         if not key in keys:
-            if len(keys) >= args.max_user_keys:
-                break
             keys[key] = True
             run(args.cleos + 'wallet import --private-key ' + key)
     for i in range(firstProducer, firstProducer + numProducers):
@@ -126,9 +125,11 @@ def startNode(nodeIndex, account):
         '    --p2p-listen-endpoint 0.0.0.0:' + str(19000 + nodeIndex) +
         '    --max-clients ' + str(maxClients) +
         '    --p2p-max-nodes-per-host ' + str(maxClients) +
-        '    --enable-stale-production'
+        '    --enable-stale-production '+
+        '    --max-transaction-time=1000 ' +
         '    --producer-name ' + account['name'] +
-        '    --private-key \'["' + account['pub'] + '","' + account['pvt'] + '"]\''
+        '    --private-key \'["' + account['pub'] + '","' + account['pvt'] + '"]\'' +
+        '    --http-validate-host=0' + 
         '    --plugin eosio::http_plugin'
         '    --plugin eosio::chain_api_plugin'
         '    --plugin eosio::producer_plugin' +
@@ -149,19 +150,31 @@ def intToCurrency(i):
     return '%d.%04d %s' % (i // 10000, i % 10000, args.symbol)
 
 def allocateFunds(b, e):
+    dist = numpy.random.pareto(1.161, e - b).tolist() # 1.161 = 80/20 rule
+    dist.sort()
+    dist.reverse()
+    factor = 500000000 / sum(dist)
     total = 0
     for i in range(b, e):
-        funds = 1000000000
+        funds = round(factor * dist[i - b] * 10000)
         if i >= firstProducer and i < firstProducer + numProducers:
-            funds = 2000000000
+            funds = max(funds, round(args.min_producer_funds * 10000))
         total += funds
         accounts[i]['funds'] = funds
-    return total
+    
+    for i in relayAccounts:
+        total += 20000000
+        total += 20000000
+        total += 1000000000
+        total += 50000000000
+
+    total + 10000000
+    return total 
 
 def createStakedAccounts(b, e):
-    stakeNet = 500000
-    stakeCpu = 500000
-    ramFunds = 500000
+    ramFunds = round(args.ram_funds * 10000)
+    configuredMinStake = round(args.min_stake * 10000)
+    maxUnstaked = round(args.max_unstaked * 10000)
     for i in range(b, e):
         a = accounts[i]
         funds = a['funds']
@@ -171,20 +184,23 @@ def createStakedAccounts(b, e):
         if funds < ramFunds:
             print('skipping %s: not enough funds to cover ram' % a['name'])
             continue
-        unstaked = funds - ramFunds - stakeNet - stakeCpu
+        minStake = min(funds - ramFunds, configuredMinStake)
+        unstaked = min(funds - ramFunds - minStake, maxUnstaked)
+        stake = funds - ramFunds - unstaked
+        stakeNet = round(stake / 2)
+        stakeCpu = stake - stakeNet
         print('%s: total funds=%s, ram=%s, net=%s, cpu=%s, unstaked=%s' % (a['name'], intToCurrency(a['funds']), intToCurrency(ramFunds), intToCurrency(stakeNet), intToCurrency(stakeCpu), intToCurrency(unstaked)))
         assert(funds == ramFunds + stakeNet + stakeCpu + unstaked)
         retry(args.cleos + 'system newaccount --transfer eosio %s %s --stake-net "%s" --stake-cpu "%s" --buy-ram "%s"   ' % 
             (a['name'], a['pub'], intToCurrency(stakeNet), intToCurrency(stakeCpu), intToCurrency(ramFunds)))
         if unstaked:
             retry(args.cleos + 'transfer eosio %s "%s"' % (a['name'], intToCurrency(unstaked)))
-        retry(args.cleos + 'transfer eosio %s "%s"' % (a['name'], intToCurrency(1000000000)))
 
-def createRelayAccount(accounts):
-    for a in accounts:
+def createRelayAccount(accs):
+    for a in accs:
         retry(args.cleos + 'system newaccount --transfer eosio %s %s --stake-net "%s" --stake-cpu "%s" --buy-ram "%s"   ' %
-              (a, relayPubKey, intToCurrency(200000000), intToCurrency(200000000), intToCurrency(1000000000)))
-        retry(args.cleos + 'transfer eosio %s "%s"' % (a, intToCurrency(10000000000)))
+              (a, relayPubKey, intToCurrency(20000000), intToCurrency(20000000), intToCurrency(1000000000)))
+        retry(args.cleos + 'transfer eosio %s "%s"' % (a, intToCurrency(50000000000)))
 
 def regProducers(b, e):
     for i in range(b, e):
@@ -297,9 +313,9 @@ def stepInstallSystemContracts():
     run(args.cleos + 'set contract eosio.token ' + args.contracts_dir + 'eosio.token/')
     run(args.cleos + 'set contract eosio.msig ' + args.contracts_dir + 'eosio.msig/')
 def stepCreateTokens():
-    run(args.cleos + 'push action eosio.token create \'["eosio", "20000000000.0000 %s"]\' -p eosio.token' % (args.symbol))
+    run(args.cleos + 'push action eosio.token create \'["eosio", "10000000000.0000 %s"]\' -p eosio.token' % (args.symbol))
     totalAllocation = allocateFunds(0, len(accounts))
-    run(args.cleos + 'push action eosio.token issue \'["eosio", "%s", "memo"]\' -p eosio' % intToCurrency(totalAllocation + 100000000000000))
+    run(args.cleos + 'push action eosio.token issue \'["eosio", "%s", "memo"]\' -p eosio' % intToCurrency(totalAllocation))
     sleep(1)
 def stepSetSystemContract():
     retry(args.cleos + 'set contract eosio ' + args.contracts_dir + 'eosio.system/')
@@ -322,7 +338,7 @@ def stepVote():
     listProducers()
     sleep(5)
 def stepProxyVotes():
-    proxyVotes(0, 0 + args.num_voters)
+    proxyVotes(0, 10)
 def stepResign():
     resign('eosio', 'eosio.prods')
     for a in systemAccounts:
@@ -331,6 +347,7 @@ def stepTransfer():
     while True:
         randomTransfer(0, args.num_senders)
 def stepLog():
+    listProducers()
     run('tail -n 60 ' + args.nodes_dir + '00-eosio/stderr')
 
 # Command Line Arguments
@@ -367,16 +384,16 @@ parser.add_argument('--nodes-dir', metavar='', help="Path to nodes directory", d
 parser.add_argument('--genesis', metavar='', help="Path to genesis.json", default="./genesis.json")
 parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
 parser.add_argument('--log-path', metavar='', help="Path to log file", default='./output.log')
-parser.add_argument('--symbol', metavar='', help="The eosio.system symbol", default='SYS')
+parser.add_argument('--symbol', metavar='', help="The eosio.system symbol", default='EOS')
 parser.add_argument('--user-limit', metavar='', help="Max number of users. (0 = no limit)", type=int, default=3000)
 parser.add_argument('--max-user-keys', metavar='', help="Maximum user keys to import into wallet", type=int, default=10)
-parser.add_argument('--ram-funds', metavar='', help="How much funds for each user to spend on ram", type=float, default=0.1)
-parser.add_argument('--min-stake', metavar='', help="Minimum stake before allocating unstaked funds", type=float, default=0.9)
-parser.add_argument('--max-unstaked', metavar='', help="Maximum unstaked funds", type=float, default=10)
+parser.add_argument('--ram-funds', metavar='', help="How much funds for each user to spend on ram", type=float, default=200)
+parser.add_argument('--min-stake', metavar='', help="Minimum stake before allocating unstaked funds", type=float, default=200)
+parser.add_argument('--max-unstaked', metavar='', help="Maximum unstaked funds", type=float, default=2000)
 parser.add_argument('--producer-limit', metavar='', help="Maximum number of producers. (0 = no limit)", type=int, default=0)
 parser.add_argument('--min-producer-funds', metavar='', help="Minimum producer funds", type=float, default=1000.0000)
 parser.add_argument('--num-producers-vote', metavar='', help="Number of producers for which each user votes", type=int, default=20)
-parser.add_argument('--num-voters', metavar='', help="Number of voters", type=int, default=10)
+parser.add_argument('--num-voters', metavar='', help="Number of voters", type=int, default=25)
 parser.add_argument('--num-senders', metavar='', help="Number of users to transfer funds randomly", type=int, default=10)
 parser.add_argument('--producer-sync-delay', metavar='', help="Time (s) to sleep to allow producers to sync", type=int, default=10)
 parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
