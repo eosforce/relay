@@ -1,7 +1,10 @@
-package eosforceHandler
+package handler
 
 import (
 	"testing"
+
+	"github.com/eosforce/relay/const"
+	"github.com/eosforce/relay/types"
 
 	"time"
 
@@ -25,11 +28,10 @@ func TestEosWatcher_Start(t *testing.T) {
 		"127.0.0.1:9010",
 	}
 
-	watcher := NewEosWatcher("eosforce1", apiURL, p2pAddrs)
-	watcher.RegHandler(func(action ActionData) {
-		data, _ := action.Action.MarshalJSON()
-		seelog.Infof("action %d, %s, %s, %s",
-			action.BlockNum, action.BlockID, action.TrxID, string(data))
+	watcher := NewEosWatcher(consts.TypeBaseEosforce, "eosforce1", apiURL, p2pAddrs)
+	watcher.RegHandler(func(action types.ActionData) {
+		seelog.Infof("action %d, %s, %s,",
+			action.BlockNum, action.BlockID, action.TrxID)
 	})
 	err := watcher.Start()
 	if err != nil {

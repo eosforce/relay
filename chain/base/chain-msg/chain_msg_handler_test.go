@@ -4,8 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/eosforce/relay/const"
+
+	"github.com/eosforce/relay/chain/base/handler"
+	"github.com/eosforce/relay/types"
+
 	"github.com/cihub/seelog"
-	"github.com/eosforce/relay/chain/base/eos-handler"
 )
 
 func TestHandler(t *testing.T) {
@@ -26,12 +30,12 @@ func TestHandler(t *testing.T) {
 
 	builder := Transfer2MsgBuilder{}
 
-	watcher := startWatcher(func(action eosHandler.ActionData) {
-		seelog.Infof("action %v %v %v", action.Action.Name, action.Action.Account, action.Action.Authorization)
-		if action.Action.Name != "transfer" || action.Action.Account != "eosio" {
+	watcher := startWatcher(func(action types.ActionData) {
+		seelog.Infof("action %v %v", action.Name, action.Account)
+		if action.Name != "transfer" || action.Account != "eosio" {
 			return
 		}
-		msg, err := builder.Build(&action)
+		msg, err := builder.BuildFromEOSForce(&action)
 		if err != nil {
 			seelog.Errorf("build msg err By %s", err.Error())
 			return
@@ -55,7 +59,7 @@ func TestHandler(t *testing.T) {
 	hh.Wait()
 }
 
-func startWatcher(f func(action eosHandler.ActionData)) *eosHandler.EosWatcher {
+func startWatcher(f func(action types.ActionData)) *handler.EosWatcher {
 	// start a chain http api :8889, p2p address 9001
 	apiURL := "http://127.0.0.1:8890"
 	p2pAddrs := []string{
@@ -70,7 +74,7 @@ func startWatcher(f func(action eosHandler.ActionData)) *eosHandler.EosWatcher {
 		"127.0.0.1:9010",
 	}
 
-	watcher := eosHandler.NewEosWatcher("eosforce1", apiURL, p2pAddrs)
+	watcher := handler.NewEosWatcher(consts.TypeBaseEosforce, "eosforce1", apiURL, p2pAddrs)
 	watcher.RegHandler(f)
 	err := watcher.Start()
 	if err != nil {

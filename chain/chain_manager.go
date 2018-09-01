@@ -3,10 +3,10 @@ package chain
 import (
 	"github.com/cihub/seelog"
 	"github.com/eosforce/relay/chain/base/chain-msg"
-	"github.com/eosforce/relay/chain/base/eos-handler"
-	"github.com/eosforce/relay/chain/base/eosforce-handler"
+	"github.com/eosforce/relay/chain/base/handler"
 	"github.com/eosforce/relay/chain/main-chain"
 	"github.com/eosforce/relay/chain/side-chain/eos"
+	"github.com/eosforce/relay/types"
 )
 
 // Manager manager chain to watcher
@@ -14,9 +14,9 @@ type Manager struct {
 	chainMsgHandler *chainMsg.Handler
 
 	mainHandler Handler
-	mainWatcher *eosforceHandler.EosWatcher
+	mainWatcher *handler.EosWatcher
 
-	watchers map[string]*eosHandler.EosWatcher
+	watchers map[string]*handler.EosWatcher
 	// sideHandlers
 }
 
@@ -26,13 +26,13 @@ func NewManager(mainOpt WatchOpt, sideOpt ...WatchOpt) *Manager {
 		chainMsgHandler: chainMsg.NewChainMsgHandler(),
 
 		mainHandler: mainChain.NewHandler(),
-		mainWatcher: eosforceHandler.NewEosWatcher(mainOpt.Name, mainOpt.ApiURL, mainOpt.P2PAddresses),
+		mainWatcher: handler.NewEosWatcher(mainOpt.Type, mainOpt.Name, mainOpt.ApiURL, mainOpt.P2PAddresses),
 
-		watchers: make(map[string]*eosHandler.EosWatcher),
+		watchers: make(map[string]*handler.EosWatcher),
 	}
 
 	for _, opt := range sideOpt {
-		res.watchers[opt.Name] = eosHandler.NewEosWatcher(opt.Name, opt.ApiURL, opt.P2PAddresses)
+		res.watchers[opt.Name] = handler.NewEosWatcher(opt.Type, opt.Name, opt.ApiURL, opt.P2PAddresses)
 	}
 
 	return res
@@ -42,8 +42,8 @@ func NewManager(mainOpt WatchOpt, sideOpt ...WatchOpt) *Manager {
 func (m *Manager) Start() error {
 	// Reg
 	m.mainHandler.Reg(m.chainMsgHandler)
-	m.mainWatcher.RegHandler(func(action eosforceHandler.ActionData) {
-		if action.Action.Name != "transfer" || action.Action.Account != "eosio" {
+	m.mainWatcher.RegHandler(func(action types.ActionData) {
+		if action.Name != "transfer" || action.Account != "eosio" {
 			return
 		}
 		msg, err := m.mainHandler.Builder().BuildFromEOSForce(&action)
@@ -56,14 +56,14 @@ func (m *Manager) Start() error {
 	})
 
 	for name, side := range m.watchers {
-		func(n string, w *eosHandler.EosWatcher) {
+		func(n string, w *handler.EosWatcher) {
 			// TODO support diff chain
 			h := eos.NewHandler(w.Name())
 			h.Reg(m.chainMsgHandler)
 
-			side.RegHandler(func(action eosHandler.ActionData) {
+			side.RegHandler(func(action types.ActionData) {
 				// TODO By FanYang use common handler to mainchain
-				if action.Action.Name != "transfer" || action.Action.Account != "eosio.token" {
+				if action.Name != "transfer" || action.Account != "eosio.token" {
 					return
 				}
 

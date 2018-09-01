@@ -1,24 +1,17 @@
-package eosforceHandler
+package handler
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/eosforce/relay/types"
+	"github.com/eosforce/relay/const"
 
 	"github.com/cihub/seelog"
-	"github.com/fanyang1988/eos-go"
+	"github.com/eosforce/relay/types"
 )
 
-// ActionData action data with block and transaction id
-type ActionData struct {
-	Action   eos.Action
-	BlockNum uint32
-	BlockID  eos.SHA256Bytes
-	TrxID    eos.SHA256Bytes
-}
-
 // ActionHandlerFunc handler func type
-type ActionHandlerFunc func(action ActionData)
+type ActionHandlerFunc func(action types.ActionData)
 
 // EosWatcher watch eos actions by some p2pAdds
 type EosWatcher struct {
@@ -28,12 +21,15 @@ type EosWatcher struct {
 
 	peers map[string]*P2PPeer
 
-	blockChan chan *eos.SignedBlock
+	blockChan chan types.SignedBlockInterface
 	errChan   chan ErrP2PPeer
 	stopChan  chan interface{}
 
 	handlers          []ActionHandlerFunc
+	handler           handlerInterface
 	processedBlockNum uint32
+
+	chainTyp int
 
 	waitter sync.WaitGroup
 }
@@ -41,19 +37,31 @@ type EosWatcher struct {
 // TODO BY FanYang support change p2p address in running
 
 // NewEosWatcher create a watcher by some p2pAdds to a eos chain
-func NewEosWatcher(name, apiURL string, p2pAdds []string) *EosWatcher {
-	return &EosWatcher{
-		name:    name,
-		apiURL:  apiURL,
-		p2pAdds: p2pAdds,
+func NewEosWatcher(chainTyp int, name, apiURL string, p2pAdds []string) *EosWatcher {
+	res := &EosWatcher{
+		chainTyp: chainTyp,
+		name:     name,
+		apiURL:   apiURL,
+		p2pAdds:  p2pAdds,
 
 		peers:     make(map[string]*P2PPeer, 64),
-		blockChan: make(chan *eos.SignedBlock, len(p2pAdds)*64+32),
+		blockChan: make(chan types.SignedBlockInterface, len(p2pAdds)*64+32),
 		errChan:   make(chan ErrP2PPeer),
 		stopChan:  make(chan interface{}),
 
 		handlers: make([]ActionHandlerFunc, 0, 32),
 	}
+
+	switch chainTyp {
+	case consts.TypeBaseEos:
+		res.handler = eosHandler{}
+	case consts.TypeBaseEosforce:
+		res.handler = eosforceHandler{}
+	default:
+		panic(fmt.Errorf("chain %s typ %s err", name, chainTyp))
+	}
+
+	return res
 }
 
 func (w *EosWatcher) Name() string {
@@ -62,18 +70,9 @@ func (w *EosWatcher) Name() string {
 
 // Start start watching
 func (w *EosWatcher) Start() error {
-	api := eos.New(w.apiURL)
-	info, err := api.GetInfo()
+	err := w.handler.Start(w)
 	if err != nil {
-		return seelog.Errorf("get chain %s info err by %s", w.name, w.apiURL)
-	}
-
-	for _, add := range w.p2pAdds {
-		w.waitter.Add(1)
-		peer := NewP2PPeer(w.blockChan, w.errChan, add, types.SHA256BytesFromForce(info.ChainID), 1)
-		peer.Connect(info.HeadBlockNum, types.SHA256BytesFromForce(info.HeadBlockID), info.HeadBlockTime.Time,
-			info.LastIrreversibleBlockNum, types.SHA256BytesFromForce(info.LastIrreversibleBlockID))
-		w.peers[add] = peer
+		return err
 	}
 
 	w.waitter.Add(1)
@@ -126,46 +125,18 @@ func (w *EosWatcher) loop() (bool, error) {
 	return false, nil
 }
 
-func (w *EosWatcher) processBlock(block *eos.SignedBlock) error {
-	// TODO By FanYang next version will to process fork from diff peer
+func (w *EosWatcher) processBlock(block types.SignedBlockInterface) error {
 	blockNum := block.BlockNumber()
 	if w.processedBlockNum >= blockNum {
-		//seelog.Debugf("no process processed block %d", blockNum)
 		return nil
 	}
-
-	seelog.Infof("process block %d", blockNum)
 	w.processedBlockNum = blockNum
+	seelog.Infof("process block %d", blockNum)
 
 	// TODO By FanYang just process block util it be IrreversibleBlock
-	blockID, err := block.BlockID()
-	if err != nil {
-		return seelog.Errorf("get block ID err by %s", err.Error())
-	}
-	for _, tr := range block.Transactions {
-		trx, err := tr.Transaction.Packed.Unpack()
-		if err != nil {
-			seelog.Errorf("transaction unpack err by %s", err.Error())
-			continue
-		}
+	// TODO By FanYang next version will to process fork from diff peer
 
-		for _, action := range trx.Actions {
-			w.handler(ActionData{
-				BlockID:  blockID,
-				BlockNum: blockNum,
-				TrxID:    tr.Transaction.ID,
-				Action:   *action,
-			})
-		}
-	}
-
-	return nil
-}
-
-func (w *EosWatcher) handler(act ActionData) {
-	for _, h := range w.handlers {
-		h(act)
-	}
+	return w.handler.ProcessBlock(w, block)
 }
 
 func (w *EosWatcher) closeAll() {
