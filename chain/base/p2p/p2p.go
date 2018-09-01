@@ -5,8 +5,8 @@ import (
 
 	"github.com/eosforce/relay/chain/base/p2p/eos"
 	"github.com/eosforce/relay/chain/base/p2p/eosforce"
+	"github.com/eosforce/relay/types"
 
-	"github.com/eosforce/relay/chain/base"
 	"github.com/eosforce/relay/chain/base/p2p/types"
 	"github.com/eosforce/relay/const"
 )
@@ -14,10 +14,10 @@ import (
 // Client p2p client interface to eosforce or eos
 type Client interface {
 	ConnectRecent() error
-	RegHandler(h types.MessageHandler)
+	RegHandler(h p2pTypes.MessageHandler)
 }
 
-func NewClient(chainTyp int, p2pAddr string, chainID base.SHA256Bytes) Client {
+func NewClient(chainTyp int, p2pAddr string, chainID types.SHA256Bytes) Client {
 	switch chainTyp {
 	case consts.TypeBaseEos:
 		return eos.NewClient(p2pAddr, chainID)

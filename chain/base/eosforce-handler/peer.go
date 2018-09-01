@@ -3,10 +3,12 @@ package eosforceHandler
 import (
 	"time"
 
-	"github.com/cihub/seelog"
-	"github.com/eosforce/relay/chain/base"
-	"github.com/eosforce/relay/chain/base/p2p"
 	"github.com/eosforce/relay/chain/base/p2p/types"
+
+	"github.com/eosforce/relay/types"
+
+	"github.com/cihub/seelog"
+	"github.com/eosforce/relay/chain/base/p2p"
 	"github.com/eosforce/relay/const"
 	"github.com/fanyang1988/eos-go"
 )
@@ -19,19 +21,19 @@ type ErrP2PPeer struct {
 
 // P2PPeer connect to eos p2p node to watch action
 type P2PPeer struct {
-	blockChan chan<- eos.SignedBlock
+	blockChan chan<- *eos.SignedBlock
 	errChan   chan<- ErrP2PPeer
 	client    p2p.Client
 
 	p2pAddress     string
-	chainID        base.SHA256Bytes
+	chainID        types.SHA256Bytes
 	networkVersion uint16
 }
 
 // TODO By FanYang change too long params
 
 // NewP2PPeer create connection p2p peer
-func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2pAddr string, chainID base.SHA256Bytes, networkVersion uint16) *P2PPeer {
+func NewP2PPeer(blockChan chan<- *eos.SignedBlock, errChan chan<- ErrP2PPeer, p2pAddr string, chainID types.SHA256Bytes, networkVersion uint16) *P2PPeer {
 	return &P2PPeer{
 		blockChan:      blockChan,
 		p2pAddress:     p2pAddr,
@@ -43,7 +45,7 @@ func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2p
 }
 
 // Connect connect or reconnect to peer, sync from currHeadBlock
-func (p *P2PPeer) Connect(headBlock uint32, headBlockID base.SHA256Bytes, headBlockTime time.Time, lib uint32, libID base.SHA256Bytes) {
+func (p *P2PPeer) Connect(headBlock uint32, headBlockID types.SHA256Bytes, headBlockTime time.Time, lib uint32, libID types.SHA256Bytes) {
 	p.client = p2p.NewClient(consts.TypeBaseEosforce, p.p2pAddress, p.chainID)
 	p.client.RegHandler(p.handler)
 
@@ -65,7 +67,7 @@ func (p *P2PPeer) Close() {
 	// TODO By FanYang imp close
 }
 
-func (p *P2PPeer) handler(msg types.P2PMessage) {
+func (p *P2PPeer) handler(msg p2pTypes.P2PMessage) {
 	switch eos.P2PMessageType(msg.GetType()) {
 	case eos.SignedBlockType:
 		{
@@ -83,7 +85,7 @@ func (p *P2PPeer) handler(msg types.P2PMessage) {
 
 			//seelog.Tracef("on block %d %s %v", signedBlockMsg.BlockNumber(), signedBlockMsg.Producer, blockID)
 
-			p.blockChan <- *signedBlockMsg
+			p.blockChan <- signedBlockMsg
 			return
 		}
 	}

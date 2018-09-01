@@ -3,7 +3,7 @@ package eosforceHandler
 import (
 	"sync"
 
-	"github.com/eosforce/relay/chain/base"
+	"github.com/eosforce/relay/types"
 
 	"github.com/cihub/seelog"
 	"github.com/fanyang1988/eos-go"
@@ -28,7 +28,7 @@ type EosWatcher struct {
 
 	peers map[string]*P2PPeer
 
-	blockChan chan eos.SignedBlock
+	blockChan chan *eos.SignedBlock
 	errChan   chan ErrP2PPeer
 	stopChan  chan interface{}
 
@@ -48,7 +48,7 @@ func NewEosWatcher(name, apiURL string, p2pAdds []string) *EosWatcher {
 		p2pAdds: p2pAdds,
 
 		peers:     make(map[string]*P2PPeer, 64),
-		blockChan: make(chan eos.SignedBlock, len(p2pAdds)*64+32),
+		blockChan: make(chan *eos.SignedBlock, len(p2pAdds)*64+32),
 		errChan:   make(chan ErrP2PPeer),
 		stopChan:  make(chan interface{}),
 
@@ -70,9 +70,9 @@ func (w *EosWatcher) Start() error {
 
 	for _, add := range w.p2pAdds {
 		w.waitter.Add(1)
-		peer := NewP2PPeer(w.blockChan, w.errChan, add, base.SHA256BytesFromForce(info.ChainID), 1)
-		peer.Connect(info.HeadBlockNum, base.SHA256BytesFromForce(info.HeadBlockID), info.HeadBlockTime.Time,
-			info.LastIrreversibleBlockNum, base.SHA256BytesFromForce(info.LastIrreversibleBlockID))
+		peer := NewP2PPeer(w.blockChan, w.errChan, add, types.SHA256BytesFromForce(info.ChainID), 1)
+		peer.Connect(info.HeadBlockNum, types.SHA256BytesFromForce(info.HeadBlockID), info.HeadBlockTime.Time,
+			info.LastIrreversibleBlockNum, types.SHA256BytesFromForce(info.LastIrreversibleBlockID))
 		w.peers[add] = peer
 	}
 
@@ -114,7 +114,7 @@ func (w *EosWatcher) loop() (bool, error) {
 		w.closeAll()
 		return true, nil
 	case b := <-w.blockChan:
-		return false, w.processBlock(&b)
+		return false, w.processBlock(b)
 	case err := <-w.errChan:
 		{
 			if err.Peer == nil {

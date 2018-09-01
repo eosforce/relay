@@ -1,4 +1,4 @@
-package types
+package p2pTypes
 
 // P2PMessage
 type P2PMessage interface {

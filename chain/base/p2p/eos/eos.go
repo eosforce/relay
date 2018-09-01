@@ -3,8 +3,8 @@ package eos
 import (
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/p2p"
-	"github.com/eosforce/relay/chain/base"
 	"github.com/eosforce/relay/chain/base/p2p/types"
+	"github.com/eosforce/relay/types"
 )
 
 type Message struct {
@@ -23,7 +23,7 @@ type P2PClient struct {
 	*p2p.Client
 }
 
-func (p P2PClient) RegHandler(h types.MessageHandler) {
+func (p P2PClient) RegHandler(h p2pTypes.MessageHandler) {
 	p.RegisterHandler(p2p.HandlerFunc(func(msg p2p.Message) {
 		h(Message{
 			&msg,
@@ -31,7 +31,7 @@ func (p P2PClient) RegHandler(h types.MessageHandler) {
 	}))
 }
 
-func NewClient(p2pAddr string, chainID base.SHA256Bytes) P2PClient {
+func NewClient(p2pAddr string, chainID types.SHA256Bytes) P2PClient {
 	return P2PClient{
 		p2p.NewClient(p2pAddr, eos.SHA256Bytes(chainID), 1),
 	}

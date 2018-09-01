@@ -3,7 +3,7 @@ package eosHandler
 import (
 	"testing"
 
-	"github.com/eosforce/relay/chain/base"
+	"github.com/eosforce/relay/types"
 
 	"github.com/cihub/seelog"
 	"github.com/eoscanada/eos-go"
@@ -13,7 +13,7 @@ import (
 func TestPeerConnectToEOS(t *testing.T) {
 	defer seelog.Flush()
 
-	blockChan := make(chan eos.SignedBlock, 64)
+	blockChan := make(chan *eos.SignedBlock, 64)
 	errChan := make(chan ErrP2PPeer)
 
 	// start a chain http api :8889, p2p address 9001
@@ -28,10 +28,10 @@ func TestPeerConnectToEOS(t *testing.T) {
 		return
 	}
 	seelog.Infof("get info %v %v", info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
-	peer := NewP2PPeer(blockChan, errChan, p2pAddr, base.SHA256BytesFromEos(info.ChainID), 1)
+	peer := NewP2PPeer(blockChan, errChan, p2pAddr, types.SHA256BytesFromEos(info.ChainID), 1)
 
-	peer.Connect(info.HeadBlockNum, base.SHA256BytesFromEos(info.HeadBlockID), info.HeadBlockTime.Time,
-		info.LastIrreversibleBlockNum, base.SHA256BytesFromEos(info.LastIrreversibleBlockID))
+	peer.Connect(info.HeadBlockNum, types.SHA256BytesFromEos(info.HeadBlockID), info.HeadBlockTime.Time,
+		info.LastIrreversibleBlockNum, types.SHA256BytesFromEos(info.LastIrreversibleBlockID))
 
 	got := 0
 
