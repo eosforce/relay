@@ -42,3 +42,4 @@ script/eosforce/config/
 script/eosforce/config\.ini
 
 cmd/relay-cli/relay-cli
+cmd/relay/vendor
