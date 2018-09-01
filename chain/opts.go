@@ -3,15 +3,9 @@ package chain
 import (
 	"fmt"
 
+	"github.com/eosforce/relay/const"
+
 	"github.com/eosforce/relay/cmd/config"
-)
-
-const (
-	// TypeBaseEos chain base eos
-	TypeBaseEos = iota + 1
-
-	// TypeBaseEosforce chain base eosforce
-	TypeBaseEosforce
 )
 
 // WatchOpt optional for watch a chain
@@ -27,9 +21,9 @@ func NewWatchOptByCfg(cfg *config.ChainCfg) WatchOpt {
 	typ := 0
 	switch cfg.Type {
 	case "eos":
-		typ = TypeBaseEos
+		typ = consts.TypeBaseEos
 	case "eosforce":
-		typ = TypeBaseEosforce
+		typ = consts.TypeBaseEosforce
 	default:
 		panic(fmt.Errorf("chain %s typ %s unknown", cfg.Name, cfg.Type))
 	}

@@ -5,7 +5,10 @@ import (
 
 	"github.com/cihub/seelog"
 	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/p2p"
+	"github.com/eosforce/relay/chain/base"
+	"github.com/eosforce/relay/chain/base/p2p"
+	"github.com/eosforce/relay/chain/base/p2p/types"
+	"github.com/eosforce/relay/const"
 )
 
 // ErrP2PPeer error from p2p peer, Peer is point to Err P2PPeer
@@ -18,17 +21,17 @@ type ErrP2PPeer struct {
 type P2PPeer struct {
 	blockChan chan<- eos.SignedBlock
 	errChan   chan<- ErrP2PPeer
-	client    *p2p.Client
+	client    p2p.Client
 
 	p2pAddress     string
-	chainID        eos.SHA256Bytes
+	chainID        base.SHA256Bytes
 	networkVersion uint16
 }
 
 // TODO By FanYang change too long params
 
 // NewP2PPeer create connection p2p peer
-func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2pAddr string, chainID eos.SHA256Bytes, networkVersion uint16) *P2PPeer {
+func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2pAddr string, chainID base.SHA256Bytes, networkVersion uint16) *P2PPeer {
 	return &P2PPeer{
 		blockChan:      blockChan,
 		p2pAddress:     p2pAddr,
@@ -40,9 +43,9 @@ func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2p
 }
 
 // Connect connect or reconnect to peer, sync from currHeadBlock
-func (p *P2PPeer) Connect(headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) {
-	p.client = p2p.NewClient(p.p2pAddress, p.chainID, p.networkVersion)
-	p.client.RegisterHandler(p2p.HandlerFunc(p.handler))
+func (p *P2PPeer) Connect(headBlock uint32, headBlockID base.SHA256Bytes, headBlockTime time.Time, lib uint32, libID base.SHA256Bytes) {
+	p.client = p2p.NewClient(consts.TypeBaseEos, p.p2pAddress, p.chainID)
+	p.client.RegHandler(p.handler)
 
 	go func() {
 		err := p.client.ConnectRecent()
@@ -62,11 +65,11 @@ func (p *P2PPeer) Close() {
 	// TODO By FanYang imp close
 }
 
-func (p *P2PPeer) handler(msg p2p.Message) {
-	switch msg.Envelope.Type {
+func (p *P2PPeer) handler(msg types.P2PMessage) {
+	switch eos.P2PMessageType(msg.GetType()) {
 	case eos.SignedBlockType:
 		{
-			signedBlockMsg, ok := msg.Envelope.P2PMessage.(*eos.SignedBlock)
+			signedBlockMsg, ok := msg.GetP2PMsg().(*eos.SignedBlock)
 			if !ok {
 				seelog.Error("typ error by signedBlockMsg")
 				return

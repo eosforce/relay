@@ -3,6 +3,8 @@ package eosforceHandler
 import (
 	"testing"
 
+	"github.com/eosforce/relay/chain/base"
+
 	"github.com/cihub/seelog"
 	"github.com/fanyang1988/eos-go"
 )
@@ -26,10 +28,10 @@ func TestPeerConnectToEOS(t *testing.T) {
 		return
 	}
 	seelog.Infof("get info %v %v", info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
-	peer := NewP2PPeer(blockChan, errChan, p2pAddr, info.ChainID, 1)
+	peer := NewP2PPeer(blockChan, errChan, p2pAddr, base.SHA256BytesFromForce(info.ChainID), 1)
 
-	peer.Connect(info.HeadBlockNum, info.HeadBlockID, info.HeadBlockTime.Time,
-		info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
+	peer.Connect(info.HeadBlockNum, base.SHA256BytesFromForce(info.HeadBlockID), info.HeadBlockTime.Time,
+		info.LastIrreversibleBlockNum, base.SHA256BytesFromForce(info.LastIrreversibleBlockID))
 
 	got := 0
 

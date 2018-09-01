@@ -3,6 +3,8 @@ package eosforceHandler
 import (
 	"sync"
 
+	"github.com/eosforce/relay/chain/base"
+
 	"github.com/cihub/seelog"
 	"github.com/fanyang1988/eos-go"
 )
@@ -68,9 +70,9 @@ func (w *EosWatcher) Start() error {
 
 	for _, add := range w.p2pAdds {
 		w.waitter.Add(1)
-		peer := NewP2PPeer(w.blockChan, w.errChan, add, info.ChainID, 1)
-		peer.Connect(info.HeadBlockNum, info.HeadBlockID, info.HeadBlockTime.Time,
-			info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
+		peer := NewP2PPeer(w.blockChan, w.errChan, add, base.SHA256BytesFromForce(info.ChainID), 1)
+		peer.Connect(info.HeadBlockNum, base.SHA256BytesFromForce(info.HeadBlockID), info.HeadBlockTime.Time,
+			info.LastIrreversibleBlockNum, base.SHA256BytesFromForce(info.LastIrreversibleBlockID))
 		w.peers[add] = peer
 	}
 
