@@ -48,9 +48,11 @@ func (p *P2PPeer) Connect(headBlock uint32, headBlockID eos.SHA256Bytes, headBlo
 	go func() {
 		err := p.client.ConnectAndSync(headBlock, headBlockID, headBlockTime, lib, libID)
 
-		p.errChan <- ErrP2PPeer{
-			Err:  seelog.Errorf("P2PPeer conn %s err by %s", p.p2pAddress, err.Error()),
-			Peer: p,
+		if err != nil {
+			p.errChan <- ErrP2PPeer{
+				Err:  seelog.Errorf("P2PPeer conn %s err by %s", p.p2pAddress, err.Error()),
+				Peer: p,
+			}
 		}
 	}()
 

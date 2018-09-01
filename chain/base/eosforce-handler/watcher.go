@@ -68,7 +68,7 @@ func (w *EosWatcher) Start() error {
 
 	for _, add := range w.p2pAdds {
 		w.waitter.Add(1)
-		peer := NewP2PPeer(w.blockChan, w.errChan, add, info.ChainID, 0)
+		peer := NewP2PPeer(w.blockChan, w.errChan, add, info.ChainID, 1)
 		peer.Connect(info.HeadBlockNum, info.HeadBlockID, info.HeadBlockTime.Time,
 			info.LastIrreversibleBlockNum, info.LastIrreversibleBlockID)
 		w.peers[add] = peer

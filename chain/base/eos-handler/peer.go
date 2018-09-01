@@ -39,7 +39,7 @@ func NewP2PPeer(blockChan chan<- eos.SignedBlock, errChan chan<- ErrP2PPeer, p2p
 
 }
 
-// Connect connect or reconnect to peer, --network-version-match  sync from currHeadBlock
+// Connect connect or reconnect to peer, sync from currHeadBlock
 func (p *P2PPeer) Connect(headBlock uint32, headBlockID eos.SHA256Bytes, headBlockTime time.Time, lib uint32, libID eos.SHA256Bytes) {
 	p.client = p2p.NewClient(p.p2pAddress, p.chainID, p.networkVersion)
 	p.client.RegisterHandler(p2p.HandlerFunc(p.handler))
@@ -47,9 +47,11 @@ func (p *P2PPeer) Connect(headBlock uint32, headBlockID eos.SHA256Bytes, headBlo
 	go func() {
 		err := p.client.ConnectRecent()
 
-		p.errChan <- ErrP2PPeer{
-			Err:  seelog.Errorf("P2PPeer conn %s err by %s", p.p2pAddress, err.Error()),
-			Peer: p,
+		if err != nil {
+			p.errChan <- ErrP2PPeer{
+				Err:  seelog.Errorf("P2PPeer conn %s err by %s", p.p2pAddress, err.Error()),
+				Peer: p,
+			}
 		}
 	}()
 
